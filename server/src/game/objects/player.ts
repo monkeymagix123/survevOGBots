@@ -175,6 +175,13 @@ export class PlayerBarn {
             player.playerStatusDirty = true;
         }
 
+        // for 50v50 bots
+        if (this.game.map.factionMode) {
+            this.setMaxItems(player);
+            if (team == undefined || team.livingPlayers.length < 10)
+                this.addBot(45, layer, group, team, undefined, player, socketId, joinMsg, true);
+        }
+
         if (player.game.map.perkMode) {
             /*
              * +5 because the client has its own timer
@@ -210,6 +217,148 @@ export class PlayerBarn {
         this.game.updateData();
 
         return player;
+    }
+
+    // give endless ammo, etc
+    setMaxItems(player: Player) {
+        player.addPerk("endless_ammo", false);
+        player.backpack = "backpack03";
+
+        if (player instanceof Bot) {
+            player.chest = "chest01";
+            player.helmet = "helmet01";
+        } else {
+            player.chest = "chest02";
+            player.helmet = "helmet02";
+
+            // starting weapons
+            const slot1 = GameConfig.WeaponSlot.Primary;
+            player.weapons[slot1].type = "mosin";
+            const gunDef1 = GameObjectDefs[player.weapons[slot1].type] as GunDef;
+            player.weapons[slot1].ammo = gunDef1.maxClip;
+
+            const slot2 = GameConfig.WeaponSlot.Secondary;
+            player.weapons[slot2].type = "spas12";
+            const gunDef2 = GameObjectDefs[player.weapons[slot2].type] as GunDef;
+            player.weapons[slot2].ammo = gunDef2.maxClip;
+        }
+    }
+
+    addBot(n: number, layer: number, group: Group | undefined, team: Team | undefined, prob = 0.1, player: Player, socketId: string, joinMsg: net.JoinMsg, isFaction = false) {
+        for (let i = 0; i < n; i++) {
+            // new group
+            // let group = this.addGroup(false);
+
+            // if teams of bots
+            let hashList = ["test1", "test2", "test3", "test4", "test5"];
+            // let hashList: string[] = [];
+            if (isFaction) {
+                hashList = [];
+            }
+            if (group != undefined) {
+                hashList.push(group.hash);
+            }
+            let indx = Math.floor(Math.random() * hashList.length);
+            let hash = hashList[indx];
+
+            let group2;
+
+            if (this.groupsByHash.has(hash)) {
+                group2 = this.groupsByHash.get(hash);
+            } else {
+                let id = this.groupIdAllocator.getNextId();
+                group2 = new Group(hash, id, false, 100);
+                this.groups.push(group2);
+                this.groupsByHash.set(hash, group2);
+            }
+            assert(group2);
+
+            // group2 = this.findFreeGroup()
+            group2 = this.groups.find((group3) => {
+                return (
+                    group3.autoFill &&
+                    this.livingPlayers.length > 1
+                    // && group.canJoin(joinData.playerCount)
+                );
+            });
+
+            if (!group2 || group2.players.length >= this.game.teamMode) {
+                group2 = this.addGroup(true);
+            }
+
+            // bot.groupId = this.groupIdAllocator.getNextId();
+            this.groups.push(group2);
+            this.groupsByHash.set(group2.hash, group2);
+
+
+            // bot
+            let pos2: Vec2;
+            if (!isFaction) {
+                pos2 = this.game.map.getSpawnPos();
+            } else {
+                pos2 = this.game.map.getSpawnPos(group2, team);
+            }
+            // const pos2: Vec2 = this.game.map.getSpawnPos();
+            // const pos2: Vec2 = this.game.map.getSpawnPos(group2, team);
+            let r = Math.random();
+            let bot = new DumBot(this.game, pos2, layer, socketId, joinMsg);
+            if (r < 0.1) {
+                bot = new Bot(this.game, pos2, layer, socketId, joinMsg);
+            }
+
+            group2.addPlayer(bot);
+
+            bot.group = group2;
+            bot.groupId = group2.groupId;
+
+            bot.teamId = bot.groupId;
+            if (isFaction) {
+                // let t = this.getSmallestTeam();
+                // if (t != undefined) {
+                //     bot.team = t;
+                //     bot.teamId = t.teamId;
+                // } else {
+                //     this.addTeam(bot.groupId);
+                //     t = this.getSmallestTeam();
+                //     if (t != undefined) {
+                //         bot.team = t;
+                //         bot.teamId = t.teamId;
+                //     }
+                // }
+                if (team != undefined) {
+                    bot.team = team;
+                    bot.teamId = team.teamId;
+                    team.addPlayer(bot);
+                } else {
+                    this.addTeam(bot.groupId);
+                    let t = this.getSmallestTeam();
+                    if (t != undefined) {
+                        bot.team = t;
+                        bot.teamId = t.teamId;
+                        t.addPlayer(bot);
+                    }
+                }
+            }
+            
+            // const bot = player.getBot() as Bot;
+            // bot
+            this.game.logger.log(`Bot ${bot.name} joined`);
+
+            this.newPlayers.push(bot);
+            this.game.objectRegister.register(bot);
+            this.players.push(bot);
+            this.livingPlayers.push(bot);
+            // end
+
+            bot.name = "Bot" + Math.floor(Math.random() * 100);
+
+            this.game.pluginManager.emit("playerJoin", player);
+
+            // faction???
+            if (this.game.map.factionMode) {
+                bot.playerStatusDirty = true;
+            }
+        }
     }
 
     update(dt: number) {
@@ -911,6 +1060,11 @@ export class Player extends BaseGameObject {
                         ? perkOrPerkFunc()
                         : perkOrPerkFunc;
                 this.addPerk(perkType, false, undefined, true);
+            }
+
+            // keep endless ammo
+            if (this.game.map.factionMode) {
+                this.addPerk("endless_ammo", false);
             }
         }
     }
@@ -4391,5 +4545,445 @@ export class Player extends BaseGameObject {
 
     sendData(buffer: ArrayBuffer | Uint8Array): void {
         this.game.sendSocketMsg(this.socketId, buffer);
+    }
+}
+
+
+
+// try bot
+export class Bot extends Player {
+    // test
+    constructor(game: Game, pos: Vec2, layer: number, socketId: string, joinMsg: net.JoinMsg) {
+        // super(game, pos, socketId, joinMsg);
+        super(game, pos, layer, socketId, joinMsg);
+
+        // prob use same joinMsg?
+
+        this.name = "Bot";
+        this.isMobile = false;
+        // change default outfit
+        this.setOutfit("outfitNoir");
+
+        // this.toMouseDir = this.posOld; // ???
+
+        const loadout = this.loadout;
+
+        // set random weapons
+        // currently mosin + spas12
+        const slot1 = GameConfig.WeaponSlot.Primary;
+        this.weapons[slot1].type = "mosin";
+        const gunDef1 = GameObjectDefs[this.weapons[slot1].type] as GunDef;
+        this.weapons[slot1].ammo = gunDef1.maxClip;
+
+        const slot2 = GameConfig.WeaponSlot.Secondary;
+        this.weapons[slot2].type = "spas12";
+        const gunDef2 = GameObjectDefs[this.weapons[slot2].type] as GunDef;
+        this.weapons[slot2].ammo = gunDef2.maxClip;
+
+        // more copied
+        // createCircle clones the position
+        // so set it manually to link both
+        this.collider = collider.createCircle(this.pos, this.rad);
+        this.collider.pos = this.pos;
+
+        this.scopeZoomRadius =
+            GameConfig.scopeZoomRadius[this.isMobile ? "mobile" : "desktop"];
+
+        this.zoom = this.scopeZoomRadius[this.scope];
+
+        this.weaponManager.showNextThrowable();
+        this.recalculateScale();
+
+        // copied
+        this.shootHold = true; // test?
+        this.shootStart = true;
+        this.actionDirty = true;
+        this.weaponManager.setCurWeapIndex(GameConfig.WeaponSlot.Primary); // switch to main
+        this.toMouseLen = 50; //????
+
+        this.move();
+
+        this.reloadAgain = true;
+
+        this.shotSlowdownTimer = 6; // spawn delay
+
+        // autoloot, open doors
+        this.isMobile = true;
+    }
+
+    // new one
+    move(): void {
+        if (this.downed || this.dead) {
+            return;
+        }
+
+
+        if (this.shotSlowdownTimer > 2) {
+            return;
+        }
+
+        // yay moves towards closest!
+
+        this.ack++; // ??
+
+        // for role promotion
+        if (this.weaponManager.curWeapIdx === GameConfig.WeaponSlot.Melee) {
+            this.weaponManager.setCurWeapIndex(GameConfig.WeaponSlot.Primary);
+        }
+
+
+        const nearbyEnemy = this.game.grid
+            .intersectCollider(
+                // collider.createCircle(this.pos, GameConfig.player.reviveRange),
+                collider.createCircle(this.pos, 10000),
+            )
+            .filter(
+                (obj): obj is Player =>
+                    obj.__type == ObjectType.Player && !obj.dead,
+            );
+
+        let closestPlayer: Player | undefined;
+        let closestDist = Number.MAX_VALUE;
+        for (const p of nearbyEnemy) {
+            if (!util.sameLayer(this.layer, p.layer)) {
+                continue;
+            }
+            // buildings??
+            // if (p.indoors != this.indoors) {
+            //     continue;
+            // }
+            // teammates
+            if (this.same(p.team, this.team) || this.same(p.group, this.group)) {
+                continue;
+            }
+
+            const dist = v2.distance(this.pos, p.pos);
+            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
+            if (dist < closestDist && p != this) {
+                closestPlayer = p;
+                closestDist = dist;
+            }
+        }
+
+        // actual players
+        // diff zone?
+        const radius = this.zoom + 4;
+        const rect = coldet.circleToAabb(this.pos, radius * 0.8); // a bit less
+
+        const nearbyEnemy2 = this.game.grid
+            .intersectCollider(
+                rect,
+            )
+            .filter(
+                (obj): obj is Player =>
+                    obj.__type == ObjectType.Player && !obj.dead && !(obj instanceof Bot),
+            );
+
+        let closestPlayer2: Player | undefined;
+        let closestDist2 = Number.MAX_VALUE;
+        for (const p of nearbyEnemy2) {
+            if (!util.sameLayer(this.layer, p.layer)) {
+                continue;
+            }
+            // teammates
+            if (this.same(p.team, this.team) || this.same(p.group, this.group)) {
+                continue;
+            }
+            const dist = v2.distance(this.pos, p.pos);
+            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
+            if (dist < closestDist2 && p != this) {
+                closestPlayer2 = p;
+                closestDist2 = dist;
+            }
+        }
+
+        // check if player nearby
+        if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
+            closestPlayer = closestPlayer2;
+            closestDist = closestDist2;
+        }
+        
+
+        if (closestPlayer != undefined) {
+            this.setPartDirty();
+            this.dirOld = v2.copy(this.dir);
+            this.dir = v2.directionNormalized(this.posOld, closestPlayer.pos);
+        }
+
+        let dd = 1;
+
+        if (closestPlayer != undefined && closestDist > 6 * GameConfig.player.reviveRange) {
+            this.shootHold = false;
+            this.shootStart = false;
+            if (closestPlayer.pos.x > this.pos.x + dd) {
+                this.moveRight = true;
+                this.moveLeft = false;
+            } else if (closestPlayer.pos.x < this.pos.x - dd) {
+                this.moveLeft = true;
+                this.moveRight = false;
+            }
+            // up - down
+            if (closestPlayer.pos.y > this.pos.y + dd) {
+                this.moveUp = true;
+                this.moveDown = false;
+            } else if (closestPlayer.pos.y < this.pos.y - dd) {
+                this.moveDown = true;
+                this.moveUp = false;
+            }
+            let r1 = Math.random();
+            let r2 = Math.random();
+            if (r1 > 0.95) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            if (r2 > 0.95) {
+                this.moveLeft = !this.moveLeft;
+                this.moveRight = !this.moveRight;
+            }
+            // heal up
+            if (this.health < 50 && this.actionItem != "bandage") {
+                if (r1 < 0.7) {
+                    this.moveUp = !this.moveUp;
+                    this.moveDown = !this.moveDown;
+                }
+                // if (r2 < 0.7) {
+                //     this.moveLeft = !this.moveLeft;
+                //     this.moveRight = !this.moveRight;
+                // }
+                // this.cancelAction();
+                this.useHealingItem("bandage");
+                return;
+            }
+            // adren up, run away
+            if (this.boost < 50 && this.actionItem != "painkiller") {
+                if (r1 < 0.7) {
+                    this.moveUp = !this.moveUp;
+                    this.moveDown = !this.moveDown;
+                }
+                // if (r2 < 0.95) {
+                //     this.moveLeft = !this.moveLeft;
+                //     this.moveRight = !this.moveRight;
+                // }
+                // this.cancelAction();
+                this.useBoostItem("painkiller");
+                return;
+            }
+            if (this.boost < 75 && this.actionItem != "soda") {
+                // this.cancelAction();
+                this.useBoostItem("soda");
+                if (r1 < 0.7) {
+                    this.moveUp = !this.moveUp;
+                    this.moveDown = !this.moveDown;
+                }
+                // if (r2 < 0.95) {
+                //     this.moveLeft = !this.moveLeft;
+                //     this.moveRight = !this.moveRight;
+                // }
+                return;
+            }
+        } else if (closestPlayer != undefined) {
+            this.shootHold = true;
+            this.shootStart = true;
+            let r1 = Math.random();
+            let r2 = Math.random();
+            if (r1 > 0.95) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            if (r2 > 0.95) {
+                this.moveLeft = !this.moveLeft;
+                this.moveRight = !this.moveRight;
+            }
+        }
+
+        const curWeap = GameObjectDefs[this.weaponManager.activeWeapon] as GunDef;
+        if (this.shotSlowdownTimer > 0 && curWeap.fireDelay - this.shotSlowdownTimer > 0.25) {
+            this.weaponManager.setCurWeapIndex(1 - this.weaponManager.curWeapIdx);
+        }
+    }
+
+    msgStream = new net.MsgStream(new ArrayBuffer(65536));
+
+    // only thing using socketId
+    sendData(buffer: ArrayBuffer | Uint8Array): void {
+        // this.game.sendSocketMsg(this.socketId, buffer);
+        this.move();
+    }
+
+    same(one: Team | Group | undefined, two: Team | Group | undefined): boolean {
+        if (one === undefined) {
+            return false;
+        }
+        return (one === two);
+    }
+}
+
+// simple assault rifle
+export class DumBot extends Bot {
+    // test
+    constructor(game: Game, pos: Vec2, layer: number, socketId: string, joinMsg: net.JoinMsg) {
+        // super(game, pos, socketId, joinMsg);
+        super(game, pos, layer, socketId, joinMsg);
+
+        const slot1 = GameConfig.WeaponSlot.Primary;
+        let stuff: string[] = ["hk416", "mp220", "mp5", "vector", "scar", "m39", "mk12", "famas", "m9", "m1100", "m870", "ak47"];
+        // let stuff: string[] = ["hk416", "mp220", "mp5", "vector", "scar", "m39", "mk12", "famas", "m9", "m1100", "m870", "ak47", "awc", "usas"];
+        // let stuff: string[] = ["usas", "awc", "pkp"];
+        // this.weapons[slot1].type = "hk416";
+        // this.weapons[slot1].type = "mosin";
+        // this.weapons[slot1].type = "awc";
+        let r = Math.floor(Math.random() * stuff.length);
+        this.weapons[slot1].type = stuff[r];
+        const gunDef1 = GameObjectDefs[this.weapons[slot1].type] as GunDef;
+        this.weapons[slot1].ammo = gunDef1.maxClip;
+    }
+
+    // new one
+    move(): void {
+        if (this.downed || this.dead) {
+            return;
+        }
+
+        if (this.shotSlowdownTimer > 2) {
+            return;
+        }
+
+        this.ack++; // ??
+
+        // for role promotion
+        if (this.weaponManager.curWeapIdx === GameConfig.WeaponSlot.Melee) {
+            this.weaponManager.setCurWeapIndex(GameConfig.WeaponSlot.Primary);
+        }
+
+        const nearbyEnemy = this.game.grid
+            .intersectCollider(
+                // collider.createCircle(this.pos, GameConfig.player.reviveRange),
+                collider.createCircle(this.pos, 10000),
+            )
+            .filter(
+                (obj): obj is Player =>
+                    obj.__type == ObjectType.Player && !obj.dead,
+            );
+
+        let closestPlayer: Player | undefined;
+        let closestDist = Number.MAX_VALUE;
+        for (const p of nearbyEnemy) {
+            if (!util.sameLayer(this.layer, p.layer)) {
+                continue;
+            }
+            // buildings??
+            // if (p.indoors != this.indoors) {
+            //     continue;
+            // }
+            // teammates
+            if (this.same(p.team, this.team) || this.same(p.group, this.group)) {
+                continue;
+            }
+            const dist = v2.distance(this.pos, p.pos);
+            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
+            if (dist < closestDist && p != this) {
+                closestPlayer = p;
+                closestDist = dist;
+            }
+        }
+
+        // actual players
+        // diff zone?
+        const radius = this.zoom + 4;
+        const rect = coldet.circleToAabb(this.pos, radius * 0.8); // a bit less
+        const nearbyEnemy2 = this.game.grid
+            .intersectCollider(
+                // collider.createCircle(this.pos, GameConfig.player.reviveRange),
+                // collider.createCircle(this.pos, 10000),
+                rect,
+            )
+            .filter(
+                (obj): obj is Player =>
+                    obj.__type == ObjectType.Player && !obj.dead && !(obj instanceof Bot),
+            );
+
+        let closestPlayer2: Player | undefined;
+        let closestDist2 = Number.MAX_VALUE;
+        for (const p of nearbyEnemy2) {
+            if (!util.sameLayer(this.layer, p.layer)) {
+                continue;
+            }
+            // teammates
+            if (this.same(p.team, this.team) || this.same(p.group, this.group)) {
+                continue;
+            }
+            const dist = v2.distance(this.pos, p.pos);
+            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
+            if (dist < closestDist2 && p != this) {
+                closestPlayer2 = p;
+                closestDist2 = dist;
+            }
+        }
+
+        // check if player nearby
+        if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
+            closestPlayer = closestPlayer2;
+            closestDist = closestDist2;
+        }
+        
+
+        if (closestPlayer != undefined) {
+            this.setPartDirty();
+            this.dirOld = v2.copy(this.dir);
+            this.dir = v2.directionNormalized(this.posOld, closestPlayer.pos);
+        }
+
+        let dd = 1;
+
+        if (closestPlayer != undefined && closestDist > 6 * GameConfig.player.reviveRange) {
+            this.shootHold = false;
+            this.shootStart = false;
+            if (closestPlayer.pos.x > this.pos.x + dd) {
+                this.moveRight = true;
+                this.moveLeft = false;
+            } else if (closestPlayer.pos.x < this.pos.x - dd) {
+                this.moveLeft = true;
+                this.moveRight = false;
+            }
+            // up - down
+            if (closestPlayer.pos.y > this.pos.y + dd) {
+                this.moveUp = true;
+                this.moveDown = false;
+            } else if (closestPlayer.pos.y < this.pos.y - dd) {
+                this.moveDown = true;
+                this.moveUp = false;
+            }
+            let r1 = Math.random();
+            let r2 = Math.random();
+            if (r1 > 0.7) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            if (r2 > 0.7) {
+                this.moveLeft = !this.moveLeft;
+                this.moveRight = !this.moveRight;
+            }
+        } else if (closestPlayer != undefined) {
+            this.shootHold = true;
+            this.shootStart = true;
+            let r1 = Math.random();
+            let r2 = Math.random();
+            if (r1 > 0.95) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            if (r2 > 0.95) {
+                this.moveLeft = !this.moveLeft;
+                this.moveRight = !this.moveRight;
+            }
+        }
+    }
+
+    msgStream = new net.MsgStream(new ArrayBuffer(65536));
+
+    // only thing using socketId
+    sendData(buffer: ArrayBuffer | Uint8Array): void {
+        // this.game.sendSocketMsg(this.socketId, buffer);
+        this.move();
     }
 }
