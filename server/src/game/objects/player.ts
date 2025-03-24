@@ -224,6 +224,10 @@ export class PlayerBarn {
         player.addPerk("endless_ammo", false);
         player.backpack = "backpack03";
 
+        player.inventory["2xscope"] = 1;
+        player.scope = "2xscope";
+        player.zoom = player.scopeZoomRadius[player.scope];
+
         if (player instanceof Bot) {
             player.chest = "chest01";
             player.helmet = "helmet01";
@@ -241,6 +245,11 @@ export class PlayerBarn {
             player.weapons[slot2].type = "spas12";
             const gunDef2 = GameObjectDefs[player.weapons[slot2].type] as GunDef;
             player.weapons[slot2].ammo = gunDef2.maxClip;
+
+            // higher scope
+            player.inventory["4xscope"] = 1;
+            player.scope = "4xscope";
+            player.zoom = player.scopeZoomRadius[player.scope];
         }
     }
 
@@ -358,6 +367,9 @@ export class PlayerBarn {
             if (this.game.map.factionMode) {
                 bot.playerStatusDirty = true;
             }
+
+            if (isFaction)
+                this.setMaxItems(bot);
         }
     }
 
@@ -4562,7 +4574,7 @@ export class Bot extends Player {
         this.name = "Bot";
         this.isMobile = false;
         // change default outfit
-        this.setOutfit("outfitNoir");
+        this.setOutfit("outfitDarkGloves");
 
         // this.toMouseDir = this.posOld; // ???
 
@@ -4595,8 +4607,6 @@ export class Bot extends Player {
         this.recalculateScale();
 
         // copied
-        this.shootHold = true; // test?
-        this.shootStart = true;
         this.actionDirty = true;
         this.weaponManager.setCurWeapIndex(GameConfig.WeaponSlot.Primary); // switch to main
         this.toMouseLen = 50; //????
