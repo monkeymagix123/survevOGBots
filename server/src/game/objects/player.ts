@@ -228,6 +228,19 @@ export class PlayerBarn {
         player.scope = "2xscope";
         player.zoom = player.scopeZoomRadius[player.scope];
 
+        player.boost = 100;
+
+        // healing items
+        player.inventory["bandage"] = 30;
+        player.inventory["healthkit"] = 4;
+        player.inventory["soda"] = 15;
+        player.inventory["painkiller"] = 4;
+
+        // grenades
+        player.inventory["frag"] = 9;
+        player.inventory["smoke"] = 6;
+        player.inventory["mirv"] = 3;
+
         if (player instanceof Bot) {
             player.chest = "chest01";
             player.helmet = "helmet01";
@@ -311,7 +324,7 @@ export class PlayerBarn {
             // const pos2: Vec2 = this.game.map.getSpawnPos(group2, team);
             let r = Math.random();
             let bot = new DumBot(this.game, pos2, layer, socketId, joinMsg);
-            if (r < 0.1) {
+            if (r < prob) {
                 bot = new Bot(this.game, pos2, layer, socketId, joinMsg);
             }
 
@@ -4642,75 +4655,19 @@ export class Bot extends Player {
         }
 
 
-        const nearbyEnemy = this.game.grid
-            .intersectCollider(
-                // collider.createCircle(this.pos, GameConfig.player.reviveRange),
-                collider.createCircle(this.pos, 10000),
-            )
-            .filter(
-                (obj): obj is Player =>
-                    obj.__type == ObjectType.Player && !obj.dead,
-            );
+        let closestPlayer = this.getClosestPlayer();
 
-        let closestPlayer: Player | undefined;
-        let closestDist = Number.MAX_VALUE;
-        for (const p of nearbyEnemy) {
-            if (!util.sameLayer(this.layer, p.layer)) {
-                continue;
-            }
-            // buildings??
-            // if (p.indoors != this.indoors) {
-            //     continue;
-            // }
-            // teammates
-            if (this.same(p.team, this.team) || this.same(p.group, this.group)) {
-                continue;
-            }
-
-            const dist = v2.distance(this.pos, p.pos);
-            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
-            if (dist < closestDist && p != this) {
-                closestPlayer = p;
-                closestDist = dist;
-            }
-        }
-
-        // actual players
-        // diff zone?
-        const radius = this.zoom + 4;
-        const rect = coldet.circleToAabb(this.pos, radius * 0.8); // a bit less
-
-        const nearbyEnemy2 = this.game.grid
-            .intersectCollider(
-                rect,
-            )
-            .filter(
-                (obj): obj is Player =>
-                    obj.__type == ObjectType.Player && !obj.dead && !(obj instanceof Bot),
-            );
-
-        let closestPlayer2: Player | undefined;
-        let closestDist2 = Number.MAX_VALUE;
-        for (const p of nearbyEnemy2) {
-            if (!util.sameLayer(this.layer, p.layer)) {
-                continue;
-            }
-            // teammates
-            if (this.same(p.team, this.team) || this.same(p.group, this.group)) {
-                continue;
-            }
-            const dist = v2.distance(this.pos, p.pos);
-            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
-            if (dist < closestDist2 && p != this) {
-                closestPlayer2 = p;
-                closestDist2 = dist;
-            }
-        }
+        let closestPlayer2 = this.getClosestPlayer(true, true);
 
         // check if player nearby
-        if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
+        // if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
+        //     closestPlayer = closestPlayer2;
+        //     closestDist = closestDist2;
+        // }
+
+        // stop autoaiming players if its 50v50
+        if (this.isVisible(closestPlayer2) && !this.game.map.factionMode) {
             closestPlayer = closestPlayer2;
-            closestDist = closestDist2;
         }
         
 
@@ -4722,34 +4679,20 @@ export class Bot extends Player {
 
         let dd = 1;
 
-        if (closestPlayer != undefined && closestDist > 6 * GameConfig.player.reviveRange) {
-            this.shootHold = false;
-            this.shootStart = false;
-            if (closestPlayer.pos.x > this.pos.x + dd) {
-                this.moveRight = true;
-                this.moveLeft = false;
-            } else if (closestPlayer.pos.x < this.pos.x - dd) {
-                this.moveLeft = true;
-                this.moveRight = false;
+        this.shootHold = false;
+        this.shootStart = false;
+
+        if (closestPlayer != undefined && !this.isVisible(closestPlayer)) {
+            this.moveTowards(closestPlayer);
+
+            let x = this.getClosestPlayer(true, true, false); // assume no enemies in range
+            // lead bots out
+            if(this.isVisible(x) && this.indoors) {
+                this.moveTowards(x, 0, 1);
             }
-            // up - down
-            if (closestPlayer.pos.y > this.pos.y + dd) {
-                this.moveUp = true;
-                this.moveDown = false;
-            } else if (closestPlayer.pos.y < this.pos.y - dd) {
-                this.moveDown = true;
-                this.moveUp = false;
-            }
+
             let r1 = Math.random();
-            let r2 = Math.random();
-            if (r1 > 0.95) {
-                this.moveUp = !this.moveUp;
-                this.moveDown = !this.moveDown;
-            }
-            if (r2 > 0.95) {
-                this.moveLeft = !this.moveLeft;
-                this.moveRight = !this.moveRight;
-            }
+
             // heal up
             if (this.health < 50 && this.actionItem != "bandage") {
                 if (r1 < 0.7) {
@@ -4825,6 +4768,115 @@ export class Bot extends Player {
             return false;
         }
         return (one === two);
+    }
+
+    /**
+     * Gets the closest player
+     * @param isInRange if it has to be in visible range, defaults to false
+     * @param needPlayer if it has to be an actual player (not a bot), defaults to false
+     * @param needEnemy if it cannot be a teammate, defaults to true
+     * @returns the closest player
+     */
+    getClosestPlayer(isInRange = false, needPlayer = false, needEnemy = true): Player | undefined {
+        const nearbyEnemy = this.getAllPlayers(isInRange, needPlayer);
+
+        let closestPlayer: Player | undefined;
+        let closestDist = Number.MAX_VALUE;
+        for (const p of nearbyEnemy) {
+            if (!util.sameLayer(this.layer, p.layer)) {
+                continue;
+            }
+            // buildings??
+            // if (p.indoors != this.indoors) {
+            //     continue;
+            // }
+            // teammates
+            if (needEnemy && (this.same(p.team, this.team) || this.same(p.group, this.group))) {
+                continue;
+            }
+
+            const dist = v2.distance(this.pos, p.pos);
+            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
+            if (dist < closestDist && p != this) {
+                closestPlayer = p;
+                closestDist = dist;
+            }
+        }
+
+        return closestPlayer;
+    }
+
+    /**
+     * Gets all players satisfying conditions
+     * @param isInRange if it has to be in visible range, defaults to false
+     * @param needPlayer if it has to be an actual player (not a bot), defaults to false
+     * @returns all such players
+     */
+    getAllPlayers(isInRange = false, needPlayer = false): Player[] {
+        // diff zone?
+        const radius = this.zoom + 4;
+        const rect = coldet.circleToAabb(this.pos, radius * 0.8); // a bit less
+
+        const coll = isInRange ? rect : collider.createCircle(this.pos, 10000);
+
+        const nearbyEnemy = this.game.grid
+            .intersectCollider(
+                coll,
+            )
+            .filter(
+                (obj): obj is Player =>
+                    obj.__type == ObjectType.Player && !obj.dead && !(needPlayer && obj instanceof Bot),
+            );
+
+        return nearbyEnemy;
+    }
+
+    isVisible(player: Player | undefined): boolean {
+        if (player === undefined) {
+            return false;
+        }
+        return (this.getAllPlayers(true).includes(player));
+    }
+
+    /**
+     * Move towards closest player
+     * @param closestPlayer player to move towards
+     * @param dd how far can be where treat as same horizontal coordinate
+     * @param chance chance of moving in straight line
+     */
+    moveTowards(closestPlayer: Player | undefined, dd = 1, chance = 0.95): void {
+        if (closestPlayer === undefined) {
+            return;
+        }
+
+        // moves towards it
+        if (closestPlayer.pos.x > this.pos.x + dd) {
+            this.moveRight = true;
+            this.moveLeft = false;
+        } else if (closestPlayer.pos.x < this.pos.x - dd) {
+            this.moveLeft = true;
+            this.moveRight = false;
+        }
+        // up - down
+        if (closestPlayer.pos.y > this.pos.y + dd) {
+            this.moveUp = true;
+            this.moveDown = false;
+        } else if (closestPlayer.pos.y < this.pos.y - dd) {
+            this.moveDown = true;
+            this.moveUp = false;
+        }
+
+        // random movement
+        let r1 = Math.random();
+        let r2 = Math.random();
+        if (r1 > chance) {
+            this.moveUp = !this.moveUp;
+            this.moveDown = !this.moveDown;
+        }
+        if (r2 > chance) {
+            this.moveLeft = !this.moveLeft;
+            this.moveRight = !this.moveRight;
+        }
     }
 }
 
