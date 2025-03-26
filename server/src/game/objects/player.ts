@@ -4665,18 +4665,19 @@ export class Bot extends Player {
 
         let closestPlayer = this.getClosestPlayer();
 
-        let closestPlayer2 = this.getClosestPlayer(true, true);
+        // stop autoaiming players if its 50v50
+        if (!this.game.map.factionMode) {
+            let closestPlayer2 = this.getClosestPlayer(true, true);
+            if (this.isVisible(closestPlayer2)) {
+                closestPlayer = closestPlayer2;
+            }
+        }
 
         // check if player nearby
         // if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
         //     closestPlayer = closestPlayer2;
         //     closestDist = closestDist2;
         // }
-
-        // stop autoaiming players if its 50v50
-        if (this.isVisible(closestPlayer2) && !this.game.map.factionMode) {
-            closestPlayer = closestPlayer2;
-        }
         
 
         if (closestPlayer != undefined) {
@@ -4966,18 +4967,19 @@ export class DumBot extends Bot {
 
         let closestPlayer = this.getClosestPlayer();
 
-        let closestPlayer2 = this.getClosestPlayer(true, true);
+        // stop autoaiming players if its 50v50
+        if (!this.game.map.factionMode) {
+            let closestPlayer2 = this.getClosestPlayer(true, true);
+            if (this.isVisible(closestPlayer2)) {
+                closestPlayer = closestPlayer2;
+            }
+        }
 
         // check if player nearby
         // if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
         //     closestPlayer = closestPlayer2;
         //     closestDist = closestDist2;
         // }
-
-        // stop autoaiming players if its 50v50
-        if (this.isVisible(closestPlayer2) && !this.game.map.factionMode) {
-            closestPlayer = closestPlayer2;
-        }
         
 
         if (closestPlayer != undefined) {
