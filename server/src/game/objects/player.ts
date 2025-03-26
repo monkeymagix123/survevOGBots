@@ -408,8 +408,11 @@ export class PlayerBarn {
                     );
                     if (promotablePlayers.length == 0) continue;
 
-                    const randomPlayer =
-                        promotablePlayers[
+                    let plyrs = promotablePlayers.filter((p) => !(p instanceof Bot));
+
+                    const randomPlayer = plyrs.length != 0
+                        ? plyrs[util.randomInt(0, plyrs.length - 1)]
+                        : promotablePlayers[
                             util.randomInt(0, promotablePlayers.length - 1)
                         ];
                     randomPlayer.promoteToRole(scheduledRole.role);
@@ -4642,8 +4645,6 @@ export class Bot extends Player {
 
         // yay moves towards closest!
 
-        this.ack++; // ??
-
         // for role promotion
         if (this.weaponManager.curWeapIdx === GameConfig.WeaponSlot.Melee) {
             this.weaponManager.setCurWeapIndex(GameConfig.WeaponSlot.Primary);
@@ -4686,49 +4687,7 @@ export class Bot extends Player {
                 this.moveTowards(x, 0, 1);
             }
 
-            let r1 = Math.random();
-
-            // heal up
-            if (this.health < 50 && this.actionItem != "bandage") {
-                if (r1 < 0.7) {
-                    this.moveUp = !this.moveUp;
-                    this.moveDown = !this.moveDown;
-                }
-                // if (r2 < 0.7) {
-                //     this.moveLeft = !this.moveLeft;
-                //     this.moveRight = !this.moveRight;
-                // }
-                // this.cancelAction();
-                this.useHealingItem("bandage");
-                return;
-            }
-            // adren up, run away
-            if (this.boost < 50 && this.actionItem != "painkiller") {
-                if (r1 < 0.7) {
-                    this.moveUp = !this.moveUp;
-                    this.moveDown = !this.moveDown;
-                }
-                // if (r2 < 0.95) {
-                //     this.moveLeft = !this.moveLeft;
-                //     this.moveRight = !this.moveRight;
-                // }
-                // this.cancelAction();
-                this.useBoostItem("painkiller");
-                return;
-            }
-            if (this.boost < 75 && this.actionItem != "soda") {
-                // this.cancelAction();
-                this.useBoostItem("soda");
-                if (r1 < 0.7) {
-                    this.moveUp = !this.moveUp;
-                    this.moveDown = !this.moveDown;
-                }
-                // if (r2 < 0.95) {
-                //     this.moveLeft = !this.moveLeft;
-                //     this.moveRight = !this.moveRight;
-                // }
-                return;
-            }
+            this.heal();
         } else if (closestPlayer != undefined) {
             this.shootHold = true;
             this.shootStart = true;
@@ -4871,6 +4830,58 @@ export class Bot extends Player {
         if (r2 > chance) {
             this.moveLeft = !this.moveLeft;
             this.moveRight = !this.moveRight;
+        }
+    }
+
+    heal(): void {
+        let r1 = Math.random();
+
+        // heal up
+        if (this.health < 30 && this.actionItem != "medkit") {
+            if (r1 < 0.7) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+        }
+        if (this.health < 65 && this.actionItem != "bandage") {
+            if (r1 < 0.7) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            // if (r2 < 0.7) {
+            //     this.moveLeft = !this.moveLeft;
+            //     this.moveRight = !this.moveRight;
+            // }
+            // this.cancelAction();
+            this.useHealingItem("bandage");
+            return;
+        }
+        // adren up, run away
+        if (this.boost < 50 && this.actionItem != "painkiller") {
+            if (r1 < 0.7) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            // if (r2 < 0.95) {
+            //     this.moveLeft = !this.moveLeft;
+            //     this.moveRight = !this.moveRight;
+            // }
+            // this.cancelAction();
+            this.useBoostItem("painkiller");
+            return;
+        }
+        if (this.boost < 75 && this.actionItem != "soda") {
+            // this.cancelAction();
+            this.useBoostItem("soda");
+            if (r1 < 0.7) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            // if (r2 < 0.95) {
+            //     this.moveLeft = !this.moveLeft;
+            //     this.moveRight = !this.moveRight;
+            // }
+            return;
         }
     }
 }
