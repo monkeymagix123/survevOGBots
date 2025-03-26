@@ -4648,6 +4648,8 @@ export class Bot extends Player {
         this.targetTimer = 0;
     }
 
+    shootLead = true; // CHANGE IF NO LEADS
+
     protected target: Player | undefined;
 
     protected targetTimer: number;
@@ -4689,7 +4691,10 @@ export class Bot extends Player {
         if (closestPlayer != undefined) {
             this.setPartDirty();
             this.dirOld = v2.copy(this.dir);
-            this.dir = v2.directionNormalized(this.posOld, closestPlayer.pos);
+
+            let k = this.shootLead ? 0.2 + 0.05 * Math.random() : 0;
+
+            this.dir = v2.directionNormalized(this.posOld, v2.add(closestPlayer.pos, v2.mul(closestPlayer.moveVel, k)));
         }
 
         let dd = 1;
