@@ -4922,7 +4922,7 @@ export class DumBot extends Bot {
         // this.weapons[slot1].type = "mosin";
         // this.weapons[slot1].type = "awc";
         let common: string[] = ["hk416", "ak47", "mp220", "mp5", "famas", "m9", "m9_dual", "mac10", "m93r", "m93r_dual", "m870", "m1100", "ot38", "ot38_dual"];
-        let rare: string[] = ["scar", "deagle", "ots_38", "m39", "mk12"];
+        let rare: string[] = ["scar", "deagle", "ots38", "m39", "mk12"];
         let mythic: string[] = ["vector", "qbb97"];
         let legendary: string[] = ["usas", "awc"];
 
