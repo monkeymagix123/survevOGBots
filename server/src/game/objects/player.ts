@@ -245,12 +245,24 @@ export class PlayerBarn {
 
             // starting weapons
             const slot1 = GameConfig.WeaponSlot.Primary;
-            player.weapons[slot1].type = "mosin";
+            let r = Math.random();
+            if (r < 0.25) {
+                player.weapons[slot1].type = "qbb97";
+            } else {
+                player.weapons[slot1].type = "groza";
+            }
+            // player.weapons[slot1].type = "mosin";
             const gunDef1 = GameObjectDefs[player.weapons[slot1].type] as GunDef;
             player.weapons[slot1].ammo = gunDef1.maxClip;
 
             const slot2 = GameConfig.WeaponSlot.Secondary;
-            player.weapons[slot2].type = "spas12";
+            r = Math.random();
+            if (r < 0.25) {
+                player.weapons[slot2].type = "saiga";
+            } else {
+                player.weapons[slot2].type = ["m870", "mp220"][util.randomInt(0, 1)];
+            }
+            // player.weapons[slot2].type = "spas12";
             const gunDef2 = GameObjectDefs[player.weapons[slot2].type] as GunDef;
             player.weapons[slot2].ammo = gunDef2.maxClip;
 
