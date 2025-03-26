@@ -4909,10 +4909,26 @@ export class DumBot extends Bot {
         // this.weapons[slot1].type = "hk416";
         // this.weapons[slot1].type = "mosin";
         // this.weapons[slot1].type = "awc";
-        let common: string[] = ["hk416", "mp220", "mp5", "famas", "m9", "mac"]
+        let common: string[] = ["hk416", "ak47", "mp220", "mp5", "famas", "m9", "m9_dual", "mac10", "m93r", "m93r_dual", "m870", "m1100", "ot38", "ot38_dual"];
+        let rare: string[] = ["scar", "deagle", "ots_38", "m39", "mk12"];
+        let mythic: string[] = ["vector", "qbb97"];
+        let legendary: string[] = ["usas", "awc"];
 
-        let r = Math.floor(Math.random() * stuff.length);
-        this.weapons[slot1].type = stuff[r];
+        let rand = Math.random();
+        let stuff;
+        if (rand < 0.01) {
+            stuff = legendary[util.randomInt(0, legendary.length - 1)];
+        } else if (rand < 0.1) {
+            stuff = mythic[util.randomInt(0, mythic.length - 1)];
+        } else if (rand < 0.25) {
+            stuff = rare[util.randomInt(0, rare.length - 1)];
+        } else {
+            stuff = common[util.randomInt(0, common.length - 1)];
+        }
+
+        // let r = Math.floor(Math.random() * stuff.length);
+        // this.weapons[slot1].type = stuff[r];
+        this.weapons[slot1].type = stuff;
         const gunDef1 = GameObjectDefs[this.weapons[slot1].type] as GunDef;
         this.weapons[slot1].ammo = gunDef1.maxClip;
     }
