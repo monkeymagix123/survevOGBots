@@ -4703,6 +4703,11 @@ export class Bot extends Player {
             }
         }
 
+        if (this.game.gas.isInGas(this.pos)) {
+            // try to move out of gas
+            this.moveTo(this.game.gas.currentPos.x, this.game.gas.currentPos.y);
+        }
+
         const curWeap = GameObjectDefs[this.weaponManager.activeWeapon] as GunDef;
         if (this.shotSlowdownTimer > 0 && curWeap.fireDelay - this.shotSlowdownTimer > 0.25) {
             this.weaponManager.setCurWeapIndex(1 - this.weaponManager.curWeapIdx);
@@ -4803,19 +4808,23 @@ export class Bot extends Player {
             return;
         }
 
+        this.moveTo(closestPlayer.pos.x, closestPlayer.pos.y, dd, chance);
+    }
+
+    moveTo(posx: number, posy: number, dd = 1, chance = 0.95): void {
         // moves towards it
-        if (closestPlayer.pos.x > this.pos.x + dd) {
+        if (posx > this.pos.x + dd) {
             this.moveRight = true;
             this.moveLeft = false;
-        } else if (closestPlayer.pos.x < this.pos.x - dd) {
+        } else if (posx < this.pos.x - dd) {
             this.moveLeft = true;
             this.moveRight = false;
         }
         // up - down
-        if (closestPlayer.pos.y > this.pos.y + dd) {
+        if (posy > this.pos.y + dd) {
             this.moveUp = true;
             this.moveDown = false;
-        } else if (closestPlayer.pos.y < this.pos.y - dd) {
+        } else if (posy < this.pos.y - dd) {
             this.moveDown = true;
             this.moveUp = false;
         }
@@ -4894,12 +4903,14 @@ export class DumBot extends Bot {
         super(game, pos, layer, socketId, joinMsg);
 
         const slot1 = GameConfig.WeaponSlot.Primary;
-        let stuff: string[] = ["hk416", "mp220", "mp5", "vector", "scar", "m39", "mk12", "famas", "m9", "m1100", "m870", "ak47"];
+        // let stuff1: string[] = ["hk416", "mp220", "mp5", "vector", "scar", "m39", "mk12", "famas", "m9", "m1100", "m870", "ak47"];
         // let stuff: string[] = ["hk416", "mp220", "mp5", "vector", "scar", "m39", "mk12", "famas", "m9", "m1100", "m870", "ak47", "awc", "usas"];
         // let stuff: string[] = ["usas", "awc", "pkp"];
         // this.weapons[slot1].type = "hk416";
         // this.weapons[slot1].type = "mosin";
         // this.weapons[slot1].type = "awc";
+        let common: string[] = ["hk416", "mp220", "mp5", "famas", "m9", "mac"]
+
         let r = Math.floor(Math.random() * stuff.length);
         this.weapons[slot1].type = stuff[r];
         const gunDef1 = GameObjectDefs[this.weapons[slot1].type] as GunDef;
@@ -4918,8 +4929,6 @@ export class DumBot extends Bot {
         }
 
         // yay moves towards closest!
-
-        this.ack++; // ??
 
         // for role promotion
         if (this.weaponManager.curWeapIdx === GameConfig.WeaponSlot.Melee) {
@@ -4962,6 +4971,9 @@ export class DumBot extends Bot {
             if (this.isVisible(x) && this.indoors) {
                 this.moveTowards(x, 0, 1);
             }
+
+            // heal
+            this.heal();
         } else if (closestPlayer != undefined) {
             this.shootHold = true;
             this.shootStart = true;
@@ -4975,6 +4987,12 @@ export class DumBot extends Bot {
                 this.moveLeft = !this.moveLeft;
                 this.moveRight = !this.moveRight;
             }
+        }
+
+        // gas
+        if (this.game.gas.isInGas(this.pos)) {
+            // try to move out of gas
+            this.moveTo(this.game.gas.currentPos.x, this.game.gas.currentPos.y);
         }
     }
 
