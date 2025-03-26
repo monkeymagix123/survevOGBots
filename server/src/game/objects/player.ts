@@ -270,6 +270,8 @@ export class PlayerBarn {
             player.inventory["4xscope"] = 1;
             player.scope = "4xscope";
             player.zoom = player.scopeZoomRadius[player.scope];
+
+            player.addPerk("takedown", false);
         }
     }
 
@@ -1097,10 +1099,10 @@ export class Player extends BaseGameObject {
                 this.addPerk(perkType, false, undefined, true);
             }
 
-            // keep endless ammo
-            if (this.game.map.factionMode) {
-                this.addPerk("endless_ammo", false);
-            }
+            // // keep endless ammo
+            // if (this.game.map.factionMode) {
+            //     this.addPerk("endless_ammo", false);
+            // }
         }
     }
 
