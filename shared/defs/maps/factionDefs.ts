@@ -200,27 +200,32 @@ const mapDef: PartialMapDef = {
                 {
                     role: "leader",
                     circleIdx: 0,
-                    wait: 50,
+                    // wait: 50,
+                    wait: 20,
                 },
                 {
                     role: "lieutenant",
                     circleIdx: 0,
-                    wait: 54,
+                    // wait: 54,
+                    wait: 24,
                 },
                 {
                     role: "marksman",
                     circleIdx: 0,
-                    wait: 58,
+                    // wait: 58,
+                    wait: 28,
                 },
                 {
                     role: "recon",
                     circleIdx: 0,
-                    wait: 62,
+                    // wait: 62,
+                    wait: 32,
                 },
                 {
                     role: "grenadier",
                     circleIdx: 0,
-                    wait: 66,
+                    // wait: 66,
+                    wait: 36,
                 },
                 // {
                 //     role: () =>
@@ -236,12 +241,14 @@ const mapDef: PartialMapDef = {
                 {
                     role: "medic",
                     circleIdx: 0,
-                    wait: 70,
+                    // wait: 70,
+                    wait: 40,
                 },
                 {
                     role: "bugler",
                     circleIdx: 0,
-                    wait: 74,
+                    // wait: 74,
+                    wait: 44,
                 },
             ],
         },
