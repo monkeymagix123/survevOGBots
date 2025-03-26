@@ -4794,7 +4794,8 @@ export class Bot extends Player {
                 continue;
             }
 
-            const dist = v2.distance(this.pos, p.pos);
+            // const dist = v2.distance(this.pos, p.pos);
+            const dist = this.dist2(this.pos, p.pos);
             // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
             if (dist < closestDist && p != this) {
                 closestPlayer = p;
@@ -4803,6 +4804,10 @@ export class Bot extends Player {
         }
 
         return closestPlayer;
+    }
+
+    dist2(a: Vec2, b: Vec2) {
+        return ((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
     }
 
     /**
