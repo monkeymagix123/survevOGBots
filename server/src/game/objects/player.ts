@@ -4765,7 +4765,8 @@ export class Bot extends Player {
             }
         }
 
-        if (this.game.gas.isInGas(this.pos)) {
+        // if (this.game.gas.isInGas(this.pos)) {
+        if (this.dist2(this.pos, this.game.gas.currentPos) >= (this.game.gas.currentRad ** 2) * 0.9) {
             // try to move out of gas
             this.moveTo(this.game.gas.currentPos.x, this.game.gas.currentPos.y);
         }
@@ -5099,7 +5100,8 @@ export class DumBot extends Bot {
         }
 
         // gas
-        if (this.game.gas.isInGas(this.pos)) {
+        // if (this.game.gas.isInGas(this.pos)) {
+        if (this.dist2(this.pos, this.game.gas.currentPos) >= (this.game.gas.currentRad ** 2) * 0.9) {
             // try to move out of gas
             this.moveTo(this.game.gas.currentPos.x, this.game.gas.currentPos.y);
         }
