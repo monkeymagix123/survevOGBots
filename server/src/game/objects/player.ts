@@ -178,8 +178,11 @@ export class PlayerBarn {
         // for 50v50 bots
         if (this.game.map.factionMode) {
             this.setMaxItems(player);
-            if (team == undefined || team.livingPlayers.length < 10)
-                this.addBot(45, layer, group, team, undefined, player, socketId, joinMsg, true);
+            if (team == undefined || team.livingPlayers.length < 10) {
+                // must autofill to get bots
+                let num = group?.autoFill ? 45 : 0;
+                this.addBot(num, layer, group, team, undefined, player, socketId, joinMsg, true);
+            }
         }
 
         // // solo?
@@ -411,6 +414,8 @@ export class PlayerBarn {
 
             if (isFaction)
                 this.setMaxItems(bot);
+
+            // 50v50: team id 1 for red, 2 for blue
         }
     }
 
