@@ -4859,7 +4859,11 @@ export class Bot extends Player {
     getAllPlayers(isInRange = false, needPlayer = false): Player[] {
         // diff zone?
         const radius = this.zoom + 4;
-        const rect = coldet.circleToAabb(this.pos, radius * 0.8); // a bit less
+        let rect = coldet.circleToAabb(this.pos, radius * 0.7); // a bit less
+        // vertical scaling: 2 since usually windows have aspect ratio 2:1
+        let scaled = coldet.scaleAabbAlongAxis(rect, v2.create(0, 1), 1 / 2.2);
+        rect.min = scaled.min;
+        rect.max = scaled.max;
 
         const coll = isInRange ? rect : collider.createCircle(this.pos, 10000);
 
