@@ -243,6 +243,11 @@ export class PlayerBarn {
         player.inventory["soda"] = 15;
         player.inventory["painkiller"] = 4;
 
+        // so don't need revive logic
+        if (this.game.map.factionMode) {
+            player.addPerk("self_revive");
+        }
+
         if (player instanceof Bot) {
             player.chest = "chest01";
             player.helmet = "helmet01";
@@ -1110,6 +1115,15 @@ export class Player extends BaseGameObject {
             // if (this.game.map.factionMode) {
             //     this.addPerk("endless_ammo", false);
             // }
+
+            if (this.role === "medic") {
+                this.removePerk("self_revive");
+            }
+
+            // so u dont just spam revive
+            if (this.role === "last_man") {
+                this.removePerk("self_revive");
+            }
         }
     }
 
