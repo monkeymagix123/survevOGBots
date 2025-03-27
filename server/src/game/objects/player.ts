@@ -243,6 +243,13 @@ export class PlayerBarn {
         player.inventory["soda"] = 15;
         player.inventory["painkiller"] = 4;
 
+        // grenades?
+        player.inventory["frag"] = 6;
+        player.inventory["smoke"] = 3;
+        player.inventory["mirv"] = 2;
+
+        player.weaponManager.showNextThrowable(); // ???
+
         // so don't need revive logic
         if (this.game.map.factionMode) {
             player.addPerk("self_revive");
