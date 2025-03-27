@@ -1095,6 +1095,15 @@ export class Player extends BaseGameObject {
         }
 
         if (roleDef.perks) {
+            if (this.role === "medic" && this.hasPerk("self_revive")) {
+                this.removePerk("self_revive");
+            }
+
+            // so u dont just spam revive
+            if (this.role === "last_man" && this.hasPerk("self_revive")) {
+                this.removePerk("self_revive");
+            }
+
             for (let i = 0; i < this.perks.length; i++) {
                 if (this.perks[i].isFromRole) {
                     this.removePerk(this.perks[i].type);
@@ -1115,15 +1124,6 @@ export class Player extends BaseGameObject {
             // if (this.game.map.factionMode) {
             //     this.addPerk("endless_ammo", false);
             // }
-
-            if (this.role === "medic") {
-                this.removePerk("self_revive");
-            }
-
-            // so u dont just spam revive
-            if (this.role === "last_man") {
-                this.removePerk("self_revive");
-            }
         }
     }
 
