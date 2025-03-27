@@ -4695,9 +4695,9 @@ export class Bot extends Player {
 
     // new one
     move(): void {
-        if (this.downed && this.actionType != GameConfig.Action.Revive) {
-            this.revive(this);
-        }
+        // if (this.downed && this.actionType != GameConfig.Action.Revive) {
+        //     this.revive(this);
+        // }
 
 
         if (this.downed || this.dead) {
@@ -5030,9 +5030,9 @@ export class DumBot extends Bot {
 
     // new one
     move(): void {
-        if (this.downed && this.actionType != GameConfig.Action.Revive) {
-            this.revive(this);
-        }
+        // if (this.downed && this.actionType != GameConfig.Action.Revive) {
+        //     this.revive(this);
+        // }
 
 
         if (this.downed || this.dead) {
