@@ -182,6 +182,13 @@ export class PlayerBarn {
                 this.addBot(45, layer, group, team, undefined, player, socketId, joinMsg, true);
         }
 
+        // // solo?
+        // if (!this.game.isTeamMode) {
+        //     this.setMaxItems(player);
+        //     if (team == undefined || team.livingPlayers.length < 10)
+        //         this.addBot(25, layer, group, team, undefined, player, socketId, joinMsg, true);
+        // }
+
         if (player.game.map.perkMode) {
             /*
              * +5 because the client has its own timer
