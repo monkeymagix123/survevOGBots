@@ -238,7 +238,8 @@ export class PlayerBarn {
         player.scope = "2xscope";
         player.zoom = player.scopeZoomRadius[player.scope];
 
-        player.boost = 100;
+        // effecively infinite boost
+        player.boost = 9999999;
 
         // healing items
         player.inventory["bandage"] = 30;
@@ -1503,10 +1504,13 @@ export class Player extends BaseGameObject {
         if (this.boost > 0 && !this.hasPerk("leadership")) {
             this.boost -= 0.375 * dt;
         }
+
+        /* Revamped health regen
         if (this.boost > 0 && this.boost <= 25) this.health += 0.5 * dt;
         else if (this.boost > 25 && this.boost <= 50) this.health += 1.25 * dt;
         else if (this.boost > 50 && this.boost <= 87.5) this.health += 1.5 * dt;
-        else if (this.boost > 87.5 && this.boost <= 100) this.health += 1.75 * dt;
+        else if (this.boost > 87.5 && this.boost <= 100) this.health += 1.75 * dt;*/
+        this.health += dt * (this.boost / 50);
 
         if (this.hasPerk("gotw")) {
             this.health += PerkProperties.gotw.healthRegen * dt;
@@ -4574,9 +4578,12 @@ export class Player extends BaseGameObject {
         }
 
         // increase speed when adrenaline is above 50%
+
+        /* Revamped player speed
         if (this.boost >= 50) {
             this.speed += GameConfig.player.boostMoveSpeed;
-        }
+        }*/
+        this.speed += GameConfig.player.boostMoveSpeed * Math.floor((this.boost / 50));
 
         if (this.animType === GameConfig.Anim.Cook) {
             this.speed -= GameConfig.player.cookSpeedPenalty;
