@@ -1445,7 +1445,8 @@ function createStone<T extends ObstacleDef>(e: Partial<T>): T {
         height: 0.5,
         collidable: true,
         destructible: true,
-        health: 250,
+        // SIGNIFICANTLY INCREASE ROCK HEALTH FROM 250(can change other attributes)
+        health: 600,
         reflectBullets: false,
         hitParticle: "rockChip",
         explodeParticle: "rockBreak",
