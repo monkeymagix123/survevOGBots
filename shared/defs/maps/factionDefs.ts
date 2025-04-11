@@ -406,10 +406,9 @@ const mapDef: PartialMapDef = {
             { name: "Tarkhany", pos: v2.create(0.21, 0.79) },
         ],
         bridgeTypes: {
-            // REMOVE LARGE STRUCTURES
-            //medium: "bridge_md_structure_01",
-            //large: "bridge_lg_structure_01",
-            //xlarge: "bridge_xlg_structure_01",
+            medium: "bridge_md_structure_01",
+            large: "bridge_lg_structure_01",
+            xlarge: "bridge_xlg_structure_01",
         },
         customSpawnRules: {
             locationSpawns: [],
