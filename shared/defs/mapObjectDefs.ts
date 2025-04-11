@@ -67,6 +67,7 @@ function wallImg(img: string, tint = 0xffffff, alpha = 1, zIdx = 10) {
     };
 }
 
+// fairly sure this is code for default barrel?
 function createBarrel<T extends ObstacleDef>(params: Partial<T>): T {
     const baseDef = {
         type: "obstacle",
@@ -77,7 +78,8 @@ function createBarrel<T extends ObstacleDef>(params: Partial<T>): T {
         collidable: true,
         destructible: true,
         explosion: "explosion_barrel",
-        health: 150,
+        // lowered health (now 70)
+        health: 70,
         hitParticle: "barrelChip",
         explodeParticle: "barrelBreak",
         reflectBullets: true,
