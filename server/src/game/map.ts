@@ -626,18 +626,18 @@ export class GameMap {
     /** only called inside generateObjects, separates logic into function to simplify control flow */
     private generateBridges(mapDef: MapDef): void {
         //factions mode always had one extra large bridge on each side of the river town's extra large bridge.
-        if (this.factionMode) {
-            this.genBridge(
-                mapDef.mapGen.bridgeTypes.xlarge,
-                this.terrain.rivers[0],
-                0.25,
-            );
-            this.genBridge(
-                mapDef.mapGen.bridgeTypes.xlarge,
-                this.terrain.rivers[0],
-                0.75,
-            );
-        }
+        // if (this.factionMode) {
+        //     this.genBridge(
+        //         mapDef.mapGen.bridgeTypes.xlarge,
+        //         this.terrain.rivers[0],
+        //         0.25,
+        //     );
+        //     this.genBridge(
+        //         mapDef.mapGen.bridgeTypes.xlarge,
+        //         this.terrain.rivers[0],
+        //         0.75,
+        //     );
+        // }
 
         //generate 0-3 bridges on random rivers for normal modes
 

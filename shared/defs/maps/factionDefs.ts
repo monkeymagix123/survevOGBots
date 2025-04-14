@@ -416,8 +416,9 @@ const mapDef: PartialMapDef = {
         },
         densitySpawns: [
             {
-                stone_01: 350,
-                barrel_01: 76,
+                // INCREASE STONE AND BARREL DENSITY (from 350 and 76 respectively)
+                stone_01: 600,
+                barrel_01: 100,
                 silo_01: 8,
                 crate_01: 38,
                 crate_02f: 5,
@@ -438,6 +439,7 @@ const mapDef: PartialMapDef = {
         ],
         fixedSpawns: [
             {
+                /* REMOVE LARGE STRUCUTRES (unsure which are large, uncomment those that are both convex and small)
                 warehouse_01f: 6,
                 house_red_01: 4,
                 house_red_02: 4,
@@ -462,6 +464,7 @@ const mapDef: PartialMapDef = {
                 mil_crate_02: { odds: 1 },
                 tree_02: 3,
                 river_town_01: 1,
+                */
             },
         ],
         randomSpawns: [],
@@ -475,11 +478,12 @@ const mapDef: PartialMapDef = {
             },
         ],
         importantSpawns: [
+            /* REMOVE LARGE STRUCTURES
             "river_town_01",
             "police_01",
             "bank_01",
             "mansion_structure_01",
-            "warehouse_complex_01",
+            "warehouse_complex_01",*/
         ],
     },
     /* STRIP_FROM_PROD_CLIENT:END */
