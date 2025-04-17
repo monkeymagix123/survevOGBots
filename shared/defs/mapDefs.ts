@@ -16,6 +16,8 @@ import { WoodsSnow } from "./maps/woodsSnowDefs";
 import { WoodsSpring } from "./maps/woodsSpringDefs";
 import { WoodsSummer } from "./maps/woodsSummerDefs";
 
+import { MainBetterLoot } from "./maps/mainBetterLoot";
+
 export const MapDefs = {
     main: Main,
     main_spring: MainSpring,
@@ -33,6 +35,8 @@ export const MapDefs = {
     savannah: Savannah,
     cobalt: Cobalt,
     turkey: Turkey,
+
+    main_better_loot: MainBetterLoot,
 } satisfies Record<string, MapDef>;
 
 export type Atlas =
