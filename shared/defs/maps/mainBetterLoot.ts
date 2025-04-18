@@ -116,9 +116,9 @@ const mapDef: PartialMapDef = {
             // { name: "groza", count: 1, weight: 0.8 },
             // { name: "scout_elite", count: 1, weight: 0.05 },
             // { name: "vss", count: 1, weight: 0.05 }, // !
-            { name: "tier_resurviv", count: 1, weight: 25 },
-            { name: "saiga", count: 1, weight: 5 },
-            { name: "sv98", count: 1, weight: 5 },
+            // { name: "tier_resurviv", count: 1, weight: 25 },
+            // { name: "saiga", count: 1, weight: 5 },
+            // { name: "sv98", count: 1, weight: 5 },
             { name: "tier_good", count: 1, weight: 1 }
         ],
         tier_resurviv: genResurviv,
@@ -136,6 +136,10 @@ const mapDef: PartialMapDef = {
             { name: "flare_gun", count: 1, weight: 0.145 }, // !
             { name: "flare_gun_dual", count: 1, weight: 0.0025 }, // !
             // add m134, pkm, m79 later
+            { name: "m134", count: 1, weight: 10 },
+            { name: "pkm", count: 1, weight: 10 },
+            { name: "m79", count: 1, weight: 10 },
+            { name: "snow_cannon", count: 1, weight: 10 },
         ],
         tier_chest: [
             // { name: "famas", count: 1, weight: 1.15 },
