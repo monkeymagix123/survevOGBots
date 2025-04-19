@@ -47,6 +47,8 @@ import type { Loot } from "./loot";
 import type { MapIndicator } from "./mapIndicator";
 import type { Obstacle } from "./obstacle";
 
+// import { Bullet } from "./bullet";
+
 interface Emote {
     playerId: number;
     pos: Vec2;
@@ -185,12 +187,12 @@ export class PlayerBarn {
             }
         }
 
-        // // solo?
-        // if (!this.game.isTeamMode) {
-        //     this.setMaxItems(player);
-        //     if (team == undefined || team.livingPlayers.length < 10)
-        //         this.addBot(25, layer, group, team, undefined, player, socketId, joinMsg, true);
-        // }
+        // solo?
+        if (!this.game.isTeamMode) {
+            this.setMaxItems(player);
+            if (team == undefined || team.livingPlayers.length < 10)
+                this.addBot(25, layer, group, team, undefined, player, socketId, joinMsg, true);
+        }
 
         if (player.game.map.perkMode) {
             /*
@@ -4682,6 +4684,7 @@ export class Bot extends Player {
     }
 
     shootLead = true; // CHANGE IF NO LEADS
+    qs = true; // CHANGE IF NO QUICKSWITCH
 
     protected target: Player | undefined;
 
@@ -4759,7 +4762,7 @@ export class Bot extends Player {
                 this.moveUp = !this.moveUp;
                 this.moveDown = !this.moveDown;
             }
-            if (r2 > 0.95) {
+            if (r2 > 0.85) {
                 this.moveLeft = !this.moveLeft;
                 this.moveRight = !this.moveRight;
             }
@@ -4771,10 +4774,8 @@ export class Bot extends Player {
             this.moveTo(this.game.gas.currentPos.x, this.game.gas.currentPos.y);
         }
 
-        const curWeap = GameObjectDefs[this.weaponManager.activeWeapon] as GunDef;
-        if (this.shotSlowdownTimer > 0 && curWeap.fireDelay - this.shotSlowdownTimer > 0.25) {
-            this.weaponManager.setCurWeapIndex(1 - this.weaponManager.curWeapIdx);
-        }
+        if (this.qs)
+            this.quickswitch();
     }
 
     newTarget(): void {
@@ -4898,15 +4899,40 @@ export class Bot extends Player {
      * @param dd how far can be where treat as same horizontal coordinate
      * @param chance chance of moving in straight line
      */
-    moveTowards(closestPlayer: Player | undefined, dd = 1, chance = 0.95): void {
+    moveTowards(closestPlayer: Player | undefined, dd = 1, chance = 0.9): void {
         if (closestPlayer === undefined) {
             return;
+        }
+
+        // move in a straight line if no bullets in sight
+        const coll = collider.createCircle(this.pos, GameConfig.player.medicReviveRange);
+
+        const nearbyBullet = this.game.bulletBarn.bullets
+            .filter(
+                (obj) =>
+                    obj.active && obj.alive && obj.player != this && (obj.player === undefined || (this.teamId != obj.player?.teamId && this.groupId != obj.player?.groupId)),
+            );
+
+        let straightLine = true;
+        nearbyBullet.forEach((b) => {
+            if (straightLine && this.dist2(this.pos, b.pos) <= GameConfig.player.reviveRange * 3) {
+                // stop moving in straight line
+                straightLine = false;
+            }
+        });
+
+        if (straightLine) {
+            chance = 1;
         }
 
         this.moveTo(closestPlayer.pos.x, closestPlayer.pos.y, dd, chance);
     }
 
     moveTo(posx: number, posy: number, dd = 1, chance = 0.95): void {
+        // since moving straight up, have diff potential go around obstacles
+        // also, can now move faster since moving in 1 direction faster
+        let diffMoveH, diffMoveV = false;
+
         // moves towards it
         if (posx > this.pos.x + dd) {
             this.moveRight = true;
@@ -4914,6 +4940,9 @@ export class Bot extends Player {
         } else if (posx < this.pos.x - dd) {
             this.moveLeft = true;
             this.moveRight = false;
+        } else {
+            this.moveLeft, this.moveRight = false;
+            diffMoveH = true;
         }
         // up - down
         if (posy > this.pos.y + dd) {
@@ -4922,18 +4951,47 @@ export class Bot extends Player {
         } else if (posy < this.pos.y - dd) {
             this.moveDown = true;
             this.moveUp = false;
+        } else {
+            this.moveDown, this.moveUp = false;
+            diffMoveV = true;
         }
 
         // random movement
         let r1 = Math.random();
         let r2 = Math.random();
-        if (r1 > chance) {
-            this.moveUp = !this.moveUp;
-            this.moveDown = !this.moveDown;
+        
+        let c = 0.05;
+
+        if (diffMoveH) {
+            if (r1 > 1 - c) {
+                this.moveLeft = true;
+            }
+            if (r1 < c) {
+                this.moveRight = true;
+            }
+        } else if (diffMoveV) {
+            if (r1 > 1 - c) {
+                this.moveUp = true;
+            }
+            if (r1 < c) {
+                this.moveDown = true;
+            }
+        } else {
+            if (r1 > chance) {
+                this.moveUp = !this.moveUp;
+                this.moveDown = !this.moveDown;
+            }
+            if (r2 > chance) {
+                this.moveLeft = !this.moveLeft;
+                this.moveRight = !this.moveRight;
+            }
         }
-        if (r2 > chance) {
-            this.moveLeft = !this.moveLeft;
-            this.moveRight = !this.moveRight;
+    }
+
+    quickswitch(): void {
+        const curWeap = GameObjectDefs[this.weaponManager.activeWeapon] as GunDef;
+        if (this.shotSlowdownTimer > 0 && curWeap.fireDelay - this.shotSlowdownTimer > 0.25) {
+            this.weaponManager.setCurWeapIndex(1 - this.weaponManager.curWeapIdx);
         }
     }
 
@@ -5026,92 +5084,10 @@ export class DumBot extends Bot {
         this.weapons[slot1].type = stuff;
         const gunDef1 = GameObjectDefs[this.weapons[slot1].type] as GunDef;
         this.weapons[slot1].ammo = gunDef1.maxClip;
+
+        this.shootLead = false;
+        this.qs = false;
     }
 
-    // new one
-    move(): void {
-        // if (this.downed && this.actionType != GameConfig.Action.Revive) {
-        //     this.revive(this);
-        // }
-
-
-        if (this.downed || this.dead) {
-            return;
-        }
-
-
-        if (this.shotSlowdownTimer > 2) {
-            return;
-        }
-
-        // yay moves towards closest!
-
-        // for role promotion
-        if (this.weaponManager.curWeapIdx === GameConfig.WeaponSlot.Melee) {
-            this.weaponManager.setCurWeapIndex(GameConfig.WeaponSlot.Primary);
-        }
-
-
-        this.newTarget();
-        let closestPlayer = this.target;
-
-        // check if player nearby
-        // if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
-        //     closestPlayer = closestPlayer2;
-        //     closestDist = closestDist2;
-        // }
-        
-
-        if (closestPlayer != undefined) {
-            this.setPartDirty();
-            this.dirOld = v2.copy(this.dir);
-            this.dir = v2.directionNormalized(this.posOld, closestPlayer.pos);
-        }
-
-        let dd = 1;
-
-        this.shootHold = false;
-        this.shootStart = false;
-
-        if (closestPlayer != undefined && !this.isVisible(closestPlayer)) {
-            this.moveTowards(closestPlayer);
-
-            let x = this.getClosestPlayer(true, true, false); // assume no enemies in range
-            // lead bots out
-            if (this.isVisible(x) && this.indoors) {
-                this.moveTowards(x, 0, 1);
-            }
-
-            // heal
-            this.heal();
-        } else if (closestPlayer != undefined) {
-            this.shootHold = true;
-            this.shootStart = true;
-            let r1 = Math.random();
-            let r2 = Math.random();
-            if (r1 > 0.95) {
-                this.moveUp = !this.moveUp;
-                this.moveDown = !this.moveDown;
-            }
-            if (r2 > 0.95) {
-                this.moveLeft = !this.moveLeft;
-                this.moveRight = !this.moveRight;
-            }
-        }
-
-        // gas
-        // if (this.game.gas.isInGas(this.pos)) {
-        if (this.dist2(this.pos, this.game.gas.currentPos) >= (this.game.gas.currentRad ** 2) * 0.9) {
-            // try to move out of gas
-            this.moveTo(this.game.gas.currentPos.x, this.game.gas.currentPos.y);
-        }
-    }
-
-    msgStream = new net.MsgStream(new ArrayBuffer(65536));
-
-    // only thing using socketId
-    sendData(buffer: ArrayBuffer | Uint8Array): void {
-        // this.game.sendSocketMsg(this.socketId, buffer);
-        this.move();
-    }
+    // deleted move since now same
 }
