@@ -5021,13 +5021,13 @@ export class Bot extends Player {
         let r1 = Math.random();
 
         // heal up
-        if (this.health < 30 && this.actionItem != "medkit") {
+        if (this.inventory["medkit"] > 0 && this.health < 30 && this.actionItem != "medkit") {
             if (r1 < 0.7) {
                 this.moveUp = !this.moveUp;
                 this.moveDown = !this.moveDown;
             }
         }
-        if (this.health < 65 && this.actionItem != "bandage") {
+        if (this.inventory["bandage"] > 0 && this.health < 65 && this.actionItem != "bandage") {
             if (r1 < 0.7) {
                 this.moveUp = !this.moveUp;
                 this.moveDown = !this.moveDown;
@@ -5041,7 +5041,7 @@ export class Bot extends Player {
             return;
         }
         // adren up, run away
-        if (this.boost < 50 && this.actionItem != "painkiller") {
+        if (this.inventory["painkiller"] > 0 && this.boost < 50 && this.actionItem != "painkiller") {
             if (r1 < 0.7) {
                 this.moveUp = !this.moveUp;
                 this.moveDown = !this.moveDown;
@@ -5054,7 +5054,7 @@ export class Bot extends Player {
             this.useBoostItem("painkiller");
             return;
         }
-        if (this.boost < 75 && this.actionItem != "soda") {
+        if (this.inventory["soda"] > 0 && this.boost < 75 && this.actionItem != "soda") {
             // this.cancelAction();
             this.useBoostItem("soda");
             if (r1 < 0.7) {
