@@ -4776,6 +4776,15 @@ export class Bot extends Player {
 
         if (this.qs)
             this.quickswitch();
+
+        // this.stop();
+    }
+
+    // don't move at all -- debugging
+    stop(): void {
+        this.moveUp, this.moveDown, this.moveLeft, this.moveRight = false;
+        this.shootStart = false;
+        this.shootHold = false;
     }
 
     newTarget(): void {
@@ -4905,27 +4914,38 @@ export class Bot extends Player {
         }
 
         // move in a straight line if no bullets in sight
-        const coll = collider.createCircle(this.pos, GameConfig.player.medicReviveRange);
+        if (this.noNearbyBullet()) {
+            chance = 1;
+        }
 
+        this.moveTo(closestPlayer.pos.x, closestPlayer.pos.y, dd, chance);
+    }
+
+    noNearbyBullet(): boolean {
         const nearbyBullet = this.game.bulletBarn.bullets
             .filter(
                 (obj) =>
                     obj.active && obj.alive && obj.player != this && (obj.player === undefined || (this.teamId != obj.player?.teamId && this.groupId != obj.player?.groupId)),
             );
 
-        let straightLine = true;
         nearbyBullet.forEach((b) => {
-            if (straightLine && this.dist2(this.pos, b.pos) <= GameConfig.player.reviveRange * 3) {
+            // change logic -- where it will go to? but not too far away
+            let dir = b.dir;
+            let pos = b.pos;
+
+            let dist = this.dist2(this.pos, pos); // distance bullet position to player
+            let perp = v2.perp(b.dir);
+            let perpDist = v2.lengthSqr(v2.proj(v2.sub(this.pos, pos), perp));
+
+            let targetD = (GameConfig.player.reviveRange * 5) ** 2;
+
+            if (dist <= targetD * 200 && perpDist <= targetD) {
                 // stop moving in straight line
-                straightLine = false;
+                return false;
             }
         });
 
-        if (straightLine) {
-            chance = 1;
-        }
-
-        this.moveTo(closestPlayer.pos.x, closestPlayer.pos.y, dd, chance);
+        return true;
     }
 
     moveTo(posx: number, posy: number, dd = 1, chance = 0.95): void {
@@ -4960,7 +4980,8 @@ export class Bot extends Player {
         let r1 = Math.random();
         let r2 = Math.random();
         
-        let c = 0.05;
+        // if bullet visible, dont walk in straight line
+        let c = chance === 1 ? 0.05: 0.2;
         // hmm change this if stuck
 
         if (diffMoveH) {
