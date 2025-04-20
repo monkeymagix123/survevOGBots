@@ -4961,6 +4961,7 @@ export class Bot extends Player {
         let r2 = Math.random();
         
         let c = 0.05;
+        // hmm change this if stuck
 
         if (diffMoveH) {
             if (r1 > 1 - c) {
