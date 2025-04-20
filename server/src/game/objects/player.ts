@@ -4899,7 +4899,7 @@ export class Bot extends Player {
      * @param dd how far can be where treat as same horizontal coordinate
      * @param chance chance of moving in straight line
      */
-    moveTowards(closestPlayer: Player | undefined, dd = 1, chance = 0.9): void {
+    moveTowards(closestPlayer: Player | undefined, dd = 1, chance = 0.8): void {
         if (closestPlayer === undefined) {
             return;
         }
