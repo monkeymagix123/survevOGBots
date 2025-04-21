@@ -1853,27 +1853,29 @@ export class Player extends BaseGameObject {
         );
         const objs = this.game.grid.intersectCollider(circle);
 
-        for (let i = 0; i < steps; i++) {
-            v2.set(this.pos, v2.add(this.pos, v2.mul(movement, speedToAdd)));
+        if (!(Bot.IGNORE_OBSTACLES && this instanceof Bot)) {
+            for (let i = 0; i < steps; i++) {
+                v2.set(this.pos, v2.add(this.pos, v2.mul(movement, speedToAdd)));
 
-            for (let j = 0; j < objs.length; j++) {
-                const obj = objs[j];
-                if (obj.__type !== ObjectType.Obstacle) continue;
-                if (!obj.collidable) continue;
-                if (obj.dead) continue;
-                if (!util.sameLayer(obj.layer, this.layer)) continue;
-                if (obj.isTree && hasTreeClimbing) continue;
+                for (let j = 0; j < objs.length; j++) {
+                    const obj = objs[j];
+                    if (obj.__type !== ObjectType.Obstacle) continue;
+                    if (!obj.collidable) continue;
+                    if (obj.dead) continue;
+                    if (!util.sameLayer(obj.layer, this.layer)) continue;
+                    if (obj.isTree && hasTreeClimbing) continue;
 
-                const collision = collider.intersectCircle(
-                    obj.collider,
-                    this.pos,
-                    this.rad,
-                );
-                if (collision) {
-                    v2.set(
+                    const collision = collider.intersectCircle(
+                        obj.collider,
                         this.pos,
-                        v2.add(this.pos, v2.mul(collision.dir, collision.pen + 0.001)),
+                        this.rad,
                     );
+                    if (collision) {
+                        v2.set(
+                            this.pos,
+                            v2.add(this.pos, v2.mul(collision.dir, collision.pen + 0.001)),
+                        );
+                    }
                 }
             }
         }
@@ -4624,6 +4626,8 @@ export class Player extends BaseGameObject {
 
 // try bot
 export class Bot extends Player {
+    static IGNORE_OBSTACLES = false;
+
     // test
     constructor(game: Game, pos: Vec2, layer: number, socketId: string, joinMsg: net.JoinMsg) {
         // super(game, pos, socketId, joinMsg);
