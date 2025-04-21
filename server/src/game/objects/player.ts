@@ -4939,7 +4939,7 @@ export class Bot extends Player {
             let perp = v2.perp(b.dir);
             let perpDist = v2.lengthSqr(v2.proj(v2.sub(this.pos, pos), perp));
 
-            let targetD = (GameConfig.player.reviveRange * 5) ** 2;
+            let targetD = (GameConfig.player.reviveRange * 1.5) ** 2;
 
             if (dist <= targetD * 200 && perpDist <= targetD) {
                 // stop moving in straight line
