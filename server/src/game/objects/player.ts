@@ -5048,6 +5048,21 @@ export class WeakenedBot extends DumBot {
         this.move();
     }
 
+    newTarget(): void {
+        if (this.targetTimer > 0.001 && this.target != undefined && !this.target.dead) {
+            return;
+        }
+
+        let closestPlayer = BotUtil.getClosestPlayer(this);
+
+        if (closestPlayer != this.target) {
+            // start timer
+            this.targetTimer = 0.4 + Math.random() * 0.1;
+        }
+        
+        this.target = closestPlayer;
+    }
+
     // override aim function
     aim(target: Player): void {
         // let k = this.shootLead ? 0.2 + 0.05 * Math.random() : 0;
