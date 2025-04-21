@@ -4733,9 +4733,7 @@ export class Bot extends Player {
             this.setPartDirty();
             this.dirOld = v2.copy(this.dir);
 
-            let k = this.shootLead ? 0.2 + 0.05 * Math.random() : 0;
-
-            this.dir = v2.directionNormalized(this.posOld, v2.add(closestPlayer.pos, v2.mul(closestPlayer.moveVel, k)));
+            this.aim(closestPlayer);
         }
 
         let dd = 1;
@@ -4778,6 +4776,12 @@ export class Bot extends Player {
             this.quickswitch();
 
         // this.stop();
+    }
+
+    aim(target: Player): void {
+        let k = this.shootLead ? 0.2 + 0.05 * Math.random() : 0;
+
+        this.dir = v2.directionNormalized(this.posOld, v2.add(target.pos, v2.mul(target.moveVel, k)));
     }
 
     // don't move at all -- debugging
@@ -4997,6 +5001,19 @@ export class DumBot extends Bot {
         this.weapons[slot1].ammo = gunDef1.maxClip;
 
         this.shootLead = false;
+        this.qs = false;
+    }
+
+    // deleted move since now same
+}
+
+// 50v50 bots
+export class WeakenedBot extends DumBot {
+    // test
+    constructor(game: Game, pos: Vec2, layer: number, socketId: string, joinMsg: net.JoinMsg) {
+        super(game, pos, layer, socketId, joinMsg);
+
+        this.shootLead = true;
         this.qs = false;
     }
 
