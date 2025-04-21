@@ -4765,10 +4765,6 @@ export class Bot extends Player {
             this.shootHold = true;
             this.shootStart = true;
 
-            // STOP HEALING WHEN FIGHTING
-            if (this.actionType != GameConfig.Action.Reload)
-                this.cancelAction();
-
             let r1 = Math.random();
             let r2 = Math.random();
             if (r1 > 0.95) {
@@ -4789,6 +4785,10 @@ export class Bot extends Player {
 
         if (this.qs)
             this.quickswitch();
+    
+        // STOP HEALING WHEN FIGHTING
+        if (!BotUtil.noNearbyBullet(this) && this.actionType != GameConfig.Action.Reload)
+            this.cancelAction();
 
         // this.stop();
     }
