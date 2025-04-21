@@ -194,9 +194,10 @@ export class PlayerBarn {
         if (!this.game.isTeamMode) {
             this.setMaxItems(player);
             if (team == undefined || team.livingPlayers.length < 10) {
-                this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);
-                setTimeout(() => {this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);}, 15000);
-                setTimeout(() => {this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);}, 15000);
+                let numBot = 25; // 75 for testing
+                this.addBot(Math.min(numBot, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);
+                // setTimeout(() => {this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);}, 15000);
+                // setTimeout(() => {this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);}, 15000);
             }
         }
 
