@@ -4743,12 +4743,12 @@ export class Bot extends Player {
         this.shootHold = false;
         this.shootStart = false;
 
-        if (closestPlayer != undefined && !this.isVisible(closestPlayer)) {
+        if (closestPlayer != undefined && !BotUtil.isVisible(this, closestPlayer)) {
             this.moveTowards(closestPlayer);
 
-            let x = this.getClosestPlayer(true, true, false); // assume no enemies in range
+            let x = BotUtil.getClosestPlayer(this, true, true, false); // assume no enemies in range
             // lead bots out
-            if(this.isVisible(x) && this.indoors) {
+            if(BotUtil.isVisible(this, x) && this.indoors) {
                 this.moveTowards(x, 0, 1);
             }
 
@@ -4792,12 +4792,12 @@ export class Bot extends Player {
             return;
         }
 
-        let closestPlayer = this.getClosestPlayer();
+        let closestPlayer = BotUtil.getClosestPlayer(this);
 
         // stop autoaiming players if its 50v50
         if (!this.game.map.factionMode) {
-            let closestPlayer2 = this.getClosestPlayer(true, true);
-            if (this.isVisible(closestPlayer2)) {
+            let closestPlayer2 = BotUtil.getClosestPlayer(this, true, true);
+            if (BotUtil.isVisible(this, closestPlayer2)) {
                 closestPlayer = closestPlayer2;
             }
         }
@@ -4816,79 +4816,6 @@ export class Bot extends Player {
     sendData(buffer: ArrayBuffer | Uint8Array): void {
         // this.game.sendSocketMsg(this.socketId, buffer);
         this.move();
-    }
-
-    /**
-     * Gets the closest player
-     * @param isInRange if it has to be in visible range, defaults to false
-     * @param needPlayer if it has to be an actual player (not a bot), defaults to false
-     * @param needEnemy if it cannot be a teammate, defaults to true
-     * @returns the closest player
-     */
-    getClosestPlayer(isInRange = false, needPlayer = false, needEnemy = true): Player | undefined {
-        const nearbyEnemy = this.getAllPlayers(isInRange, needPlayer);
-
-        let closestPlayer: Player | undefined;
-        let closestDist = Number.MAX_VALUE;
-        for (const p of nearbyEnemy) {
-            if (!util.sameLayer(this.layer, p.layer)) {
-                continue;
-            }
-            // buildings??
-            // if (p.indoors != this.indoors) {
-            //     continue;
-            // }
-            // teammates
-            if (needEnemy && BotUtil.sameTeam(this, p)) {
-                continue;
-            }
-
-            // const dist = v2.distance(this.pos, p.pos);
-            const dist = BotUtil.dist2(this.pos, p.pos);
-            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
-            if (dist < closestDist && p != this) {
-                closestPlayer = p;
-                closestDist = dist;
-            }
-        }
-
-        return closestPlayer;
-    }
-
-    /**
-     * Gets all players satisfying conditions
-     * @param isInRange if it has to be in visible range, defaults to false
-     * @param needPlayer if it has to be an actual player (not a bot), defaults to false
-     * @returns all such players
-     */
-    getAllPlayers(isInRange = false, needPlayer = false): Player[] {
-        // diff zone?
-        const radius = this.zoom + 4;
-        let rect = coldet.circleToAabb(this.pos, radius * 0.7); // a bit less
-        // vertical scaling: 2 since usually windows have aspect ratio 2:1
-        let scaled = coldet.scaleAabbAlongAxis(rect, v2.create(0, 1), 1 / 2.2);
-        rect.min = scaled.min;
-        rect.max = scaled.max;
-
-        const coll = isInRange ? rect : collider.createCircle(this.pos, 10000);
-
-        const nearbyEnemy = this.game.grid
-            .intersectCollider(
-                coll,
-            )
-            .filter(
-                (obj): obj is Player =>
-                    obj.__type == ObjectType.Player && !obj.dead && !(needPlayer && obj instanceof Bot),
-            );
-
-        return nearbyEnemy;
-    }
-
-    isVisible(player: Player | undefined): boolean {
-        if (player === undefined) {
-            return false;
-        }
-        return (this.getAllPlayers(true).includes(player));
     }
 
     /**

@@ -47,13 +47,31 @@ import type { Loot } from "./loot";
 import type { MapIndicator } from "./mapIndicator";
 import type { Obstacle } from "./obstacle";
 
-import type { Player, Bot, DumBot} from "./player";
+import { Player, Bot, DumBot} from "./player";
 
 export class BotUtil {
+    // basic utilities
     static dist2(a: Vec2, b: Vec2) {
         return ((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
     }
 
+    static same(one: Team | Group | undefined, two: Team | Group | undefined): boolean {
+        if (one === undefined) {
+            return false;
+        }
+        return (one === two);
+    }
+
+    static sameTeam(a: Player | undefined, b: Player | undefined): boolean {
+        if (this.same(a?.team, b?.team))
+            return true;
+        if (this.same(a?.group, b?.group))
+            return true;
+
+        return false;
+    }
+
+    // actual advanced functions / utilities
     static noNearbyBullet(bot: Player): boolean {
         const nearbyBullet = bot.game.bulletBarn.bullets
             .filter(
@@ -88,19 +106,76 @@ export class BotUtil {
         return true;
     }
 
-    static same(one: Team | Group | undefined, two: Team | Group | undefined): boolean {
-        if (one === undefined) {
-            return false;
+    /**
+     * Gets the closest player
+     * @param isInRange if it has to be in visible range, defaults to false
+     * @param needPlayer if it has to be an actual player (not a bot), defaults to false
+     * @param needEnemy if it cannot be a teammate, defaults to true
+     * @returns the closest player
+     */
+    static getClosestPlayer(bot: Player, isInRange = false, needPlayer = false, needEnemy = true): Player | undefined {
+        const nearbyEnemy = this.getAllPlayers(bot, isInRange, needPlayer);
+
+        let closestPlayer: Player | undefined;
+        let closestDist = Number.MAX_VALUE;
+        for (const p of nearbyEnemy) {
+            if (!util.sameLayer(bot.layer, p.layer)) {
+                continue;
+            }
+            // buildings??
+            // if (p.indoors != this.indoors) {
+            //     continue;
+            // }
+            // teammates
+            if (needEnemy && BotUtil.sameTeam(bot, p)) {
+                continue;
+            }
+
+            // const dist = v2.distance(this.pos, p.pos);
+            const dist = BotUtil.dist2(bot.pos, p.pos);
+            // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
+            if (dist < closestDist && p != bot) {
+                closestPlayer = p;
+                closestDist = dist;
+            }
         }
-        return (one === two);
+
+        return closestPlayer;
     }
 
-    static sameTeam(a: Player | undefined, b: Player | undefined): boolean {
-        if (this.same(a?.team, b?.team))
-            return true;
-        if (this.same(a?.group, b?.group))
-            return true;
+    /**
+     * Gets all players satisfying conditions
+     * @param isInRange if it has to be in visible range, defaults to false
+     * @param needPlayer if it has to be an actual player (not a bot), defaults to false
+     * @returns all such players
+     */
+    static getAllPlayers(bot: Player, isInRange = false, needPlayer = false): Player[] {
+        // diff zone?
+        const radius = bot.zoom + 4;
+        let rect = coldet.circleToAabb(bot.pos, radius * 0.7); // a bit less
+        // vertical scaling: 2 since usually windows have aspect ratio 2:1
+        let scaled = coldet.scaleAabbAlongAxis(rect, v2.create(0, 1), 1 / 2.2);
+        rect.min = scaled.min;
+        rect.max = scaled.max;
 
-        return false;
+        const coll = isInRange ? rect : collider.createCircle(bot.pos, 10000);
+
+        const nearbyEnemy = bot.game.grid
+            .intersectCollider(
+                coll,
+            )
+            .filter(
+                (obj): obj is Player =>
+                    obj.__type == ObjectType.Player && !obj.dead && !(needPlayer && obj instanceof Bot),
+            );
+
+        return nearbyEnemy;
+    }
+
+    static isVisible(bot: Player, player: Player | undefined): boolean {
+        if (player === undefined) {
+            return false;
+        }
+        return (this.getAllPlayers(bot, true).includes(player));
     }
 }
