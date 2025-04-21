@@ -4790,6 +4790,15 @@ export class Bot extends Player {
         if (!BotUtil.noNearbyBullet(this) && this.actionType != GameConfig.Action.Reload)
             this.cancelAction();
 
+        // if (this.actionType != GameConfig.Action.Reload && !BotUtil.noNearbyBullet(this)) {
+        //     this.game.playerBarn.addEmote(
+        //         this.__id,
+        //         this.pos,
+        //         "emote_dabface",
+        //         false,
+        //     );
+        // }
+
         // this.stop();
     }
 
@@ -4928,12 +4937,16 @@ export class Bot extends Player {
     heal(): void {
         let r1 = Math.random();
 
+        // maybe better run away
+
         // heal up
         if (this.inventory["medkit"] > 0 && this.health < 30 && this.actionItem != "medkit") {
             if (r1 < 0.7) {
                 this.moveUp = !this.moveUp;
                 this.moveDown = !this.moveDown;
             }
+            this.useHealingItem("medkit");
+            return;
         }
         if (this.inventory["bandage"] > 0 && this.health < 65 && this.actionItem != "bandage") {
             if (r1 < 0.7) {
@@ -4964,7 +4977,6 @@ export class Bot extends Player {
         }
         if (this.inventory["soda"] > 0 && this.boost < 75 && this.actionItem != "soda") {
             // this.cancelAction();
-            this.useBoostItem("soda");
             if (r1 < 0.7) {
                 this.moveUp = !this.moveUp;
                 this.moveDown = !this.moveDown;
@@ -4973,6 +4985,7 @@ export class Bot extends Player {
             //     this.moveLeft = !this.moveLeft;
             //     this.moveRight = !this.moveRight;
             // }
+            this.useBoostItem("soda");
             return;
         }
     }
@@ -5041,9 +5054,9 @@ export class WeakenedBot extends DumBot {
 
         this.moveLeft = true;
 
-        if (!this.hasPerk("flak_jacket")) {
-            this.addPerk("flak_jacket", false);
-        }
+        // if (!this.hasPerk("flak_jacket")) {
+        //     this.addPerk("flak_jacket", false);
+        // }
     }
 
     update(dt: number): void {
