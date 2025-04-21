@@ -4943,6 +4943,13 @@ export class Bot extends Player {
 
             if (dist <= targetD * 200 && perpDist <= targetD) {
                 // stop moving in straight line
+                // testing below
+                // this.game.playerBarn.addEmote(
+                //     this.__id,
+                //     this.pos,
+                //     "emote_dabface",
+                //     false,
+                // );
                 return false;
             }
         });
