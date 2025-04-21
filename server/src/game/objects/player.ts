@@ -191,7 +191,7 @@ export class PlayerBarn {
         if (!this.game.isTeamMode) {
             this.setMaxItems(player);
             if (team == undefined || team.livingPlayers.length < 10)
-                this.addBot(25, layer, group, team, undefined, player, socketId, joinMsg, true);
+                this.addBot(75, layer, group, team, undefined, player, socketId, joinMsg, true);
         }
 
         if (player.game.map.perkMode) {
@@ -4722,13 +4722,6 @@ export class Bot extends Player {
         this.newTarget();
         let closestPlayer = this.target;
 
-        // check if player nearby
-        // if (closestPlayer2 != undefined && closestDist2 < 6 * GameConfig.player.reviveRange) {
-        //     closestPlayer = closestPlayer2;
-        //     closestDist = closestDist2;
-        // }
-        
-
         if (closestPlayer != undefined) {
             this.setPartDirty();
             this.dirOld = v2.copy(this.dir);
@@ -4825,6 +4818,15 @@ export class Bot extends Player {
         return (one === two);
     }
 
+    sameTeam(a: Player | undefined, b: Player | undefined): boolean {
+        if (this.same(a?.team, b?.team))
+            return true;
+        if (this.same(a?.group, b?.group))
+            return true;
+
+        return false;
+    }
+
     /**
      * Gets the closest player
      * @param isInRange if it has to be in visible range, defaults to false
@@ -4846,7 +4848,7 @@ export class Bot extends Player {
             //     continue;
             // }
             // teammates
-            if (needEnemy && (this.same(p.team, this.team) || this.same(p.group, this.group))) {
+            if (needEnemy && this.sameTeam(this, p)) {
                 continue;
             }
 
@@ -4925,7 +4927,7 @@ export class Bot extends Player {
         const nearbyBullet = this.game.bulletBarn.bullets
             .filter(
                 (obj) =>
-                    obj.active && obj.alive && obj.player != this && (obj.player === undefined || (this.teamId != obj.player?.teamId && this.groupId != obj.player?.groupId)),
+                    obj.active && obj.alive && (obj.player === undefined || !this.sameTeam(this, obj.player)),
             );
 
         nearbyBullet.forEach((b) => {
