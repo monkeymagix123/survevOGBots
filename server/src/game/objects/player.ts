@@ -183,7 +183,8 @@ export class PlayerBarn {
             if (team == undefined || team.livingPlayers.length < 10) {
                 // must autofill to get bots
                 let num = group?.autoFill ? 45 : 0;
-                this.addBot(num, layer, group, team, undefined, player, socketId, joinMsg, true);
+                // no more mosin bots for 50v50
+                this.addBot(num, layer, group, team, 0, player, socketId, joinMsg, true);
             }
         }
 
