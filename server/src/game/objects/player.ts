@@ -4763,6 +4763,11 @@ export class Bot extends Player {
         } else if (closestPlayer != undefined) {
             this.shootHold = true;
             this.shootStart = true;
+
+            // STOP HEALING WHEN FIGHTING
+            if (this.actionType != GameConfig.Action.Reload)
+                this.cancelAction();
+
             let r1 = Math.random();
             let r2 = Math.random();
             if (r1 > 0.95) {
@@ -5018,12 +5023,28 @@ export class DumBot extends Bot {
 
 // 50v50 bots
 export class WeakenedBot extends DumBot {
+    protected aimTicker: number;
+    protected aimType: number; // atrocious, mid, or great
+    protected aimK: number;
+
     // test
     constructor(game: Game, pos: Vec2, layer: number, socketId: string, joinMsg: net.JoinMsg) {
         super(game, pos, layer, socketId, joinMsg);
 
         this.shootLead = true;
         this.qs = false;
+
+        this.aimTicker = 0;
+        this.aimType = 5;
+        this.aimK = 0;
+
+        this.moveLeft = true;
+    }
+
+    update(dt: number): void {
+        super.update(dt);
+        this.aimTicker = Math.max(0, this.aimTicker - dt);
+        this.move();
     }
 
     // override aim function
@@ -5035,17 +5056,37 @@ export class WeakenedBot extends DumBot {
             // levels of aim?
             // 15% chance of atrocious aim, 20% bad, 50% good, rest 25% is insane
             k = 0.17 + BotUtil.randomSym(0.05);
-            let r = Math.random();
-            if (r < 0.15) {
-                k += BotUtil.randomSym(0.2 * 5);
-            } else if (r < 0.15 + 0.20) {
-                k += BotUtil.randomSym(0.2 * 3);
-            } else if (r < 0.15 + 0.20 + 0.50) {
-                k += BotUtil.randomSym(0.2 * 1);
+
+            // insane aim is just base value of k
+
+            if (this.aimTicker < 0.01 || this.aimK === undefined) {
+                let r = Math.random();
+                let oldAimType = this.aimType;
+
+                if (r < 0.15) {
+                    k += BotUtil.randomSym(0.2 * 5);
+                    this.aimType = 0;
+                } else if (r < 0.15 + 0.20) {
+                    k += BotUtil.randomSym(0.2 * 3);
+                    this.aimType = 1;
+                } else if (r < 0.15 + 0.20 + 0.50) {
+                    k += BotUtil.randomSym(0.2 * 1);
+                    this.aimType = 2;
+                } else {
+                    this.aimType = 5;
+                }
+
+                this.aimK = k;
+                
+                if (oldAimType != this.aimType) {
+                    this.aimTicker = 0.15 + BotUtil.randomSym(0.03);
+                }
+            } else {
+                // already set a type of aim
+                this.aimK = this.aimK + BotUtil.randomSym(0.03);
             }
-            // insane aim is just base k
         }
 
-        this.dir = v2.directionNormalized(this.posOld, v2.add(target.pos, v2.mul(target.moveVel, k)));
+        this.dir = v2.directionNormalized(this.posOld, v2.add(target.pos, v2.mul(target.moveVel, this.aimK)));
     }
 }
