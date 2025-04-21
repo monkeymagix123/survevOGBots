@@ -193,8 +193,11 @@ export class PlayerBarn {
         // solo?
         if (!this.game.isTeamMode) {
             this.setMaxItems(player);
-            if (team == undefined || team.livingPlayers.length < 10)
-                this.addBot(75, layer, group, team, undefined, player, socketId, joinMsg, true);
+            if (team == undefined || team.livingPlayers.length < 10) {
+                this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);
+                setTimeout(() => {this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);}, 15000);
+                setTimeout(() => {this.addBot(Math.min(75, Math.max(0, 80 - this.livingPlayers.length)), layer, group, team, undefined, player, socketId, joinMsg, false);}, 15000);
+            }
         }
 
         if (player.game.map.perkMode) {
@@ -364,6 +367,10 @@ export class PlayerBarn {
                 bot = new Bot(this.game, pos2, layer, socketId, joinMsg);
             }
 
+            if (!isFaction) {
+                bot = new WeakenedBot(this.game, pos2, layer, socketId, joinMsg);
+            }
+
             group2.addPlayer(bot);
 
             bot.group = group2;
@@ -417,7 +424,7 @@ export class PlayerBarn {
                 bot.playerStatusDirty = true;
             }
 
-            if (isFaction)
+            // if (isFaction)
                 this.setMaxItems(bot);
 
             // 50v50: team id 1 for red, 2 for blue
@@ -4830,7 +4837,7 @@ export class Bot extends Player {
      * @param dd how far can be where treat as same horizontal coordinate
      * @param chance chance of moving in straight line
      */
-    moveTowards(closestPlayer: Player | undefined, dd = 1, chance = 0.8): void {
+    moveTowards(closestPlayer: Player | undefined, dd = 1, chance = 0.90): void {
         if (closestPlayer === undefined) {
             return;
         }
@@ -4843,7 +4850,7 @@ export class Bot extends Player {
         this.moveTo(closestPlayer.pos.x, closestPlayer.pos.y, dd, chance);
     }
 
-    moveTo(posx: number, posy: number, dd = 1, chance = 0.95): void {
+    moveTo(posx: number, posy: number, dd = 1, chance = 0.90): void {
         // since moving straight up, have diff potential go around obstacles
         // also, can now move faster since moving in 1 direction faster
         let diffMoveH, diffMoveV = false;
@@ -4876,7 +4883,7 @@ export class Bot extends Player {
         let r2 = Math.random();
         
         // if bullet visible, dont walk in straight line
-        let c = chance === 1 ? 0.05: 0.2;
+        let c = chance === 1 ? 0.05: 0.1;
         // hmm change this if stuck
 
         if (diffMoveH) {
@@ -5021,11 +5028,22 @@ export class WeakenedBot extends DumBot {
 
     // override aim function
     aim(target: Player): void {
-        let k = this.shootLead ? 0.2 + 0.05 * Math.random() : 0;
+        // let k = this.shootLead ? 0.2 + 0.05 * Math.random() : 0;
+        let k = 0;
         if (this.shootLead) {
             // good aim: 0.2 to 0.25
             // levels of aim?
-            // 60% chance of atrocious aim
+            // 15% chance of atrocious aim, 20% bad, 50% good, rest 25% is insane
+            k = 0.17 + BotUtil.randomSym(0.05);
+            let r = Math.random();
+            if (r < 0.15) {
+                k += BotUtil.randomSym(0.2 * 5);
+            } else if (r < 0.15 + 0.20) {
+                k += BotUtil.randomSym(0.2 * 3);
+            } else if (r < 0.15 + 0.20 + 0.50) {
+                k += BotUtil.randomSym(0.2 * 1);
+            }
+            // insane aim is just base k
         }
 
         this.dir = v2.directionNormalized(this.posOld, v2.add(target.pos, v2.mul(target.moveVel, k)));

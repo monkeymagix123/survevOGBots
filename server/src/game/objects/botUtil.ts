@@ -178,4 +178,10 @@ export class BotUtil {
         }
         return (this.getAllPlayers(bot, true).includes(player));
     }
+
+    static randomSym(n: number): number {
+        let r = Math.random();
+
+        return (2 * r - 1) * n;
+    }
 }
