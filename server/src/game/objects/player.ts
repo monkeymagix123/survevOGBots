@@ -49,6 +49,8 @@ import type { Obstacle } from "./obstacle";
 
 // import { Bullet } from "./bullet";
 
+import { BotUtil } from "./botUtil";
+
 interface Emote {
     playerId: number;
     pos: Vec2;
@@ -4767,7 +4769,7 @@ export class Bot extends Player {
         }
 
         // if (this.game.gas.isInGas(this.pos)) {
-        if (this.dist2(this.pos, this.game.gas.currentPos) >= (this.game.gas.currentRad ** 2) * 0.9) {
+        if (BotUtil.dist2(this.pos, this.game.gas.currentPos) >= (this.game.gas.currentRad ** 2) * 0.9) {
             // try to move out of gas
             this.moveTo(this.game.gas.currentPos.x, this.game.gas.currentPos.y);
         }
@@ -4816,22 +4818,6 @@ export class Bot extends Player {
         this.move();
     }
 
-    same(one: Team | Group | undefined, two: Team | Group | undefined): boolean {
-        if (one === undefined) {
-            return false;
-        }
-        return (one === two);
-    }
-
-    sameTeam(a: Player | undefined, b: Player | undefined): boolean {
-        if (this.same(a?.team, b?.team))
-            return true;
-        if (this.same(a?.group, b?.group))
-            return true;
-
-        return false;
-    }
-
     /**
      * Gets the closest player
      * @param isInRange if it has to be in visible range, defaults to false
@@ -4853,12 +4839,12 @@ export class Bot extends Player {
             //     continue;
             // }
             // teammates
-            if (needEnemy && this.sameTeam(this, p)) {
+            if (needEnemy && BotUtil.sameTeam(this, p)) {
                 continue;
             }
 
             // const dist = v2.distance(this.pos, p.pos);
-            const dist = this.dist2(this.pos, p.pos);
+            const dist = BotUtil.dist2(this.pos, p.pos);
             // if (dist <= GameConfig.player.reviveRange && dist < closestDist) {
             if (dist < closestDist && p != this) {
                 closestPlayer = p;
@@ -4867,10 +4853,6 @@ export class Bot extends Player {
         }
 
         return closestPlayer;
-    }
-
-    dist2(a: Vec2, b: Vec2) {
-        return ((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
     }
 
     /**
@@ -4921,45 +4903,11 @@ export class Bot extends Player {
         }
 
         // move in a straight line if no bullets in sight
-        if (this.noNearbyBullet()) {
+        if (BotUtil.noNearbyBullet(this)) {
             chance = 1;
         }
 
         this.moveTo(closestPlayer.pos.x, closestPlayer.pos.y, dd, chance);
-    }
-
-    noNearbyBullet(): boolean {
-        const nearbyBullet = this.game.bulletBarn.bullets
-            .filter(
-                (obj) =>
-                    obj.active && obj.alive && (obj.player === undefined || !this.sameTeam(this, obj.player)),
-            );
-
-        nearbyBullet.forEach((b) => {
-            // change logic -- where it will go to? but not too far away
-            let dir = b.dir;
-            let pos = b.pos;
-
-            let dist = this.dist2(this.pos, pos); // distance bullet position to player
-            let perp = v2.perp(b.dir);
-            let perpDist = v2.lengthSqr(v2.proj(v2.sub(this.pos, pos), perp));
-
-            let targetD = (GameConfig.player.reviveRange * 1.5) ** 2;
-
-            if (dist <= targetD * 200 && perpDist <= targetD) {
-                // stop moving in straight line
-                // testing below
-                // this.game.playerBarn.addEmote(
-                //     this.__id,
-                //     this.pos,
-                //     "emote_dabface",
-                //     false,
-                // );
-                return false;
-            }
-        });
-
-        return true;
     }
 
     moveTo(posx: number, posy: number, dd = 1, chance = 0.95): void {
