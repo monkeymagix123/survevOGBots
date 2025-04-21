@@ -5084,7 +5084,7 @@ export class Bot extends Player {
     }
 }
 
-// simple assault rifle
+// 50v50 bots
 export class DumBot extends Bot {
     // test
     constructor(game: Game, pos: Vec2, layer: number, socketId: string, joinMsg: net.JoinMsg) {
