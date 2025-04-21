@@ -76,7 +76,7 @@ export class BotUtil {
         const nearbyBullet = bot.game.bulletBarn.bullets
             .filter(
                 (obj) =>
-                    obj.active && obj.alive && (obj.player === undefined || !this.sameTeam(bot, obj.player)),
+                    obj.active && obj.alive && obj.player != bot && (obj.player === undefined || !this.sameTeam(bot, obj.player)),
             );
 
         nearbyBullet.forEach((b) => {

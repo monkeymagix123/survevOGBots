@@ -5040,6 +5040,10 @@ export class WeakenedBot extends DumBot {
         this.aimK = 0;
 
         this.moveLeft = true;
+
+        if (!this.hasPerk("flak_jacket")) {
+            this.addPerk("flak_jacket", false);
+        }
     }
 
     update(dt: number): void {
