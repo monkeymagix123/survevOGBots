@@ -4750,7 +4750,9 @@ export class Bot extends Player {
                 this.moveTowards(x, 0, 1);
             }
 
-            this.heal();
+            // don't heal if some guy is shooting
+            if (BotUtil.noNearbyBullet(this))
+                this.heal();
         } else if (closestPlayer != undefined) {
             this.shootHold = true;
             this.shootStart = true;
@@ -5017,5 +5019,15 @@ export class WeakenedBot extends DumBot {
         this.qs = false;
     }
 
-    // deleted move since now same
+    // override aim function
+    aim(target: Player): void {
+        let k = this.shootLead ? 0.2 + 0.05 * Math.random() : 0;
+        if (this.shootLead) {
+            // good aim: 0.2 to 0.25
+            // levels of aim?
+            // 60% chance of atrocious aim
+        }
+
+        this.dir = v2.directionNormalized(this.posOld, v2.add(target.pos, v2.mul(target.moveVel, k)));
+    }
 }
