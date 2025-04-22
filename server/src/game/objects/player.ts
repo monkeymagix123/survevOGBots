@@ -4935,6 +4935,13 @@ export class Bot extends Player {
             // don't heal if some guy is shooting
             if (BotUtil.noNearbyBullet(this))
                 this.heal();
+
+            let obs = BotUtil.getCollidingObstacles(this, true);
+            if (obs.length > 0) {
+                this.shootStart = true;
+                this.shootHold = true;
+                this.dir = v2.directionNormalized(this.posOld, obs[0].pos);
+            }
         } else if (closestPlayer != undefined) {
             this.shootHold = true;
             this.shootStart = true;
