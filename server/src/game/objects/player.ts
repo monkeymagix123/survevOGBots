@@ -5039,7 +5039,7 @@ export class Bot extends Player {
         }
 
         // move in a straight line if no bullets in sight
-        if (BotUtil.noNearbyBullet(this)) {
+        if (!this.game.map.factionMode && BotUtil.noNearbyBullet(this)) {
             chance = 1;
         }
 
